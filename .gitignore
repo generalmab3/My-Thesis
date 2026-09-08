@@ -1,0 +1,22 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+# Built PDF (rebuilt from source; keep repo light)
+thesis/thesis.pdf
+overleaf.zip
+# Python
+__pycache__/
+*.pyc
+# Training artifacts (regenerable)
+thesis/code/training_full.log
+thesis/figs/forward_data.npz
+thesis/figs/*metrics*.json
