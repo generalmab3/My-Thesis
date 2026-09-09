@@ -12,6 +12,8 @@ cd defense
 xelatex slides.tex
 ```
 
+در ویندوز کافی است روی فایل `build.bat` دابل‌کلیک کنید.
+
 ## Overleaf
 
 محتویات همین پوشه را زیپ و آپلود کنید، کامپایلر را XeLaTeX بگذارید و
