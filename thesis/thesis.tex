@@ -52,7 +52,10 @@
 \settextfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
 \setdigitfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
 \setlatintextfont[Scale=MatchLowercase]{TeX Gyre Termes}
-\DefaultMathsDigits
+% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین قدیمی و جدید)
+\makeatletter
+\@ifundefined{DefaultMathDigits}{\DefaultMathsDigits}{\DefaultMathDigits}
+\makeatother
 
 \hypersetup{
   pdftitle={شبکه‌های عصبی آگاه از فیزیک برای حل مسائل مستقیم و معکوس معادلات دیفرانسیل جزئی غیرخطی},
