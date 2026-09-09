@@ -39,7 +39,7 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u],
 \label{eq:residual}
 \end{equation}
 که در آن $u$ همان خروجی شبکه است. نکته کلیدی اینجاست که چون مشتق‌های
-$u_t$، $u_x$، $u_{xx}$ و... همگی با مشتق‌گیری خودکار از روی شبکه به دست
+$u_t$، $u_x$، $u_{xx}$ و غیره همگی با مشتق‌گیری خودکار از روی شبکه به دست
 می‌آیند، خودِ $f$ نیز یک شبکه عصبی (با همان پارامترهای $\theta$ ولی توابع
 فعال‌ساز متفاوت) محسوب می‌شود؛ به این شبکه، شبکه آگاه از فیزیک گفته می‌شود.
 اگر شبکه $u$ به‌خوبی آموزش ببیند، باید در همه نقاط دامنه $f \approx 0$
@@ -85,9 +85,10 @@ $u(t,\mathbf{x})$ را پیش‌بینی می‌کند؛ به همین دلیل�
 \end{equation}
 که در آن:
 \begin{equation}
-\mathrm{MSE}_u = \frac{1}{N_u}\sum_{i=1}^{N_u} \left|u(t^i_u,\mathbf{x}^i_u) - u^i\right|^2,
-\qquad
-\mathrm{MSE}_f = \frac{1}{N_f}\sum_{i=1}^{N_f} \left|f(t^i_f,\mathbf{x}^i_f)\right|^2.
+\begin{aligned}
+\mathrm{MSE}_u &= \frac{1}{N_u}\sum_{i=1}^{N_u} \left|u(t^i_u,\mathbf{x}^i_u) - u^i\right|^2, \\
+\mathrm{MSE}_f &= \frac{1}{N_f}\sum_{i=1}^{N_f} \left|f(t^i_f,\mathbf{x}^i_f)\right|^2.
+\end{aligned}
 \label{eq:loss-terms}
 \end{equation}
 در اینجا $\{t^i_u,\mathbf{x}^i_u,u^i\}_{i=1}^{N_u}$ داده‌های آموزشی روی شرط
