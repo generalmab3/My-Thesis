@@ -6,17 +6,17 @@
 \begin{singlespace}
 \begin{latin}
 \begin{center}
-{\Large\bfseries Abstract}\\[0.6cm]
+{\Large\bfseries Abstract}\\[0.4cm]
 \end{center}
 
-\setstretch{1.18}
-The numerical solution of nonlinear partial differential equations (PDEs) is a fundamental challenge in scientific computing and engineering. While classical numerical methods are mathematically rigorous and widely adopted, they inherently rely on computational mesh generation and suffer from the curse of dimensionality in high-dimensional domains. On the other hand, purely data-driven deep learning models typically demand vast volumes of training data and lack formal guarantees regarding physical consistency. In recent years, the physics-informed neural network (PINN) framework has emerged as a promising paradigm that seamlessly integrates governing physical laws into deep learning architectures. This thesis presents a comprehensive study, implementation, and empirical evaluation of PINNs for solving both forward and inverse problems in nonlinear PDEs.
+\setstretch{1.10}
+The numerical solution of nonlinear partial differential equations (PDEs) is a fundamental challenge in scientific computing and engineering. While classical numerical methods are mathematically rigorous, they inherently rely on computational mesh generation and suffer from the curse of dimensionality. On the other hand, purely data-driven deep learning models require vast training datasets and lack guarantees regarding physical consistency. In recent years, the physics-informed neural network (PINN) framework has emerged as a promising paradigm that seamlessly integrates governing physical laws into deep learning architectures. This thesis presents a comprehensive study, implementation, and empirical evaluation of PINNs for solving both forward and inverse problems in nonlinear PDEs.
 
 First, we establish the theoretical foundations, including partial differential equations, classical numerical schemes, deep feedforward networks, optimization algorithms, and automatic differentiation. We then formulate the continuous- and discrete-time PINN frameworks, detailing the construction of residual networks and composite loss functions. In the computational section, the continuous-time model is implemented for the one-dimensional viscous Burgers equation in Python using the JAX library. An independent high-precision reference solver based on the Fourier spectral method with fourth-order exponential time-differencing (ETDRK4) is developed and verified against the semi-analytical Cole-Hopf solution.
 
-In the forward problem, the continuous solution across the spatio-temporal domain is accurately reconstructed using only 200 initial and boundary data points, achieving a relative $L_2$ error of \FwdRelErr\ compared to the spectral reference; spatial error analysis demonstrates that the error is predominantly confined to the sharp shock layer. In the inverse problem, the unknown advection and diffusion coefficients are successfully identified from 5000 scattered spatio-temporal observations: the advection coefficient is discovered with an error of \LamIErrClean\ and the diffusion coefficient with \LamIIErrClean\ in the noise-free case, and with errors of \LamIErrNoisy\ and \LamIIErrNoisy\ respectively under one percent Gaussian noise. The results confirm the exceptional data efficiency and robustness of physics-informed neural networks.
+In the forward problem, the continuous solution across the spatio-temporal domain is reconstructed using only 200 initial and boundary data points, achieving a relative $L_2$ error of \FwdRelErr\ compared to the spectral reference; spatial error analysis demonstrates that the error is confined to the sharp shock layer. In the inverse problem, unknown advection and diffusion coefficients are identified from 5000 scattered observations: the advection coefficient is discovered with an error of \LamIErrClean\ and diffusion with \LamIIErrClean\ in the noise-free case, and with errors of \LamIErrNoisy\ and \LamIIErrNoisy\ respectively under one percent Gaussian noise. The results confirm the exceptional data efficiency and robustness of physics-informed neural networks.
 
-\vspace{0.4cm}
+\vspace{0.3cm}
 \noindent\textbf{Keywords:} Physics-Informed Neural Networks, Nonlinear Partial Differential Equations, Forward Problem, Inverse Problem, Burgers Equation, Automatic Differentiation, Fourier Spectral Method.
 \end{latin}
 \end{singlespace}
