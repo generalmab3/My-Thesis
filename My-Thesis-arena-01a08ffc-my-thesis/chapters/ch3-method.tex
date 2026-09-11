@@ -2,22 +2,22 @@
 \chapter{شبکه‌های عصبی آگاه از فیزیک}
 \label{ch:method}
 
-در این فصل، ساختار ریاضی و الگوریتمی چارچوب «شبکه‌های عصبی آگاه از فیزیک» (\lr{PINN}) که متدولوژی اصلی این پژوهش را تشکیل می‌دهد، به‌تفصیل تشریح می‌گردد. ابتدا صورت‌بندی کلی مسئله و ایده محوری روش تبیین شده و سپس ساختار مدل‌های زمان‌پیوسته و زمان‌گسسته در مسائل مستقیم معرفی می‌شوند. در ادامه، فرمول‌بندی مسئله معکوس برای کشف پارامترهای مجهول معادلات ارائه می‌گردد و در پایان، ملاحظات تجربی و عملیاتی حاکم بر آموزش این مدل‌ها مورد بحث قرار می‌گیرد \cite{raissi2019}.
+در این فصل، ساختار ریاضی و الگوریتمی چارچوب «شبکه‌های عصبی آگاه از فیزیک» (\lr{PINN}) که متدولوژی اصلی این پژوهش را تشکیل می‌دهد، به‌تفصیل و به‌صورتی گام‌به‌گام و خودخوان تشریح می‌گردد. هدف این چارچوب، ایجاد پلی استوار میان قوانین پایه‌ای فیزیک و توانمندی تقریب‌زدن شبکه‌های عصبی عمیق است. در ادامه، ابتدا صورت‌بندی کلی مسئله و ایده محوری روش تبیین شده و سپس ساختار مدل‌های زمان‌پیوسته و زمان‌گسسته در مسائل مستقیم معرفی می‌شوند. پس از آن، فرمول‌بندی مسئله معکوس برای کشف پارامترهای مجهول معادلات ارائه می‌گردد و در پایان، ملاحظات تجربی و عملیاتی حاکم بر آموزش این مدل‌ها مورد بحث قرار می‌گیرد \cite{raissi2019}.
 
 \section{صورت‌بندی کلی مسئله و ایده محوری}
 \label{sec:formulation}
 
-معادلات دیفرانسیل جزئی غیرخطی و وابسته به زمان با ساختار پارامتری عام زیر را در نظر بگیرید:
+بسیاری از سیستم‌های دینامیکی در فیزیک و مهندسی توسط معادلات دیفرانسیل جزئی غیرخطی و وابسته به زمان توصیف می‌شوند. صورت پارامتری عام این معادلات را می‌توان به فرم زیر بیان کرد:
 \begin{equation}
 u_t + \mathcal{N}[u; \lambda] = 0, \quad \mathbf{x} \in \Omega, \quad t \in [0,T],
 \label{eq:general-pde}
 \end{equation}
-که در آن $u(t,\mathbf{x})$ تابع مجهول حالت سیستم، $\mathcal{N}[\cdot; \lambda]$ عملگر دیفرانسیلی غیرخطی وابسته به بردار پارامترهای فیزیکی $\lambda \in \mathbb{R}^p$، و $\Omega \subset \mathbb{R}^d$ دامنه مکانی پیوسته با مرز $\partial\Omega$ است. این ساختار عمومی، طیف وسیعی از قوانین بقا، فرایندهای انتشار، معادلات ناویه‌استوکس و مدل‌های برگرز را شامل می‌شود. به‌عنوان نمونه، در معادله برگرز \eqref{eq:burgers-intro}، عملگر دیفرانسیلی به‌صورت $\mathcal{N}[u;\lambda] = \lambda_1 u u_x - \lambda_2 u_{xx}$ با بردار پارامتر $\lambda = (\lambda_1, \lambda_2)$ تعریف می‌گردد.
+که در آن $u(t,\mathbf{x})$ تابع مجهول حالت سیستم (مانند سرعت، فشار، دما یا غلظت)، $u_t = \frac{\partial u}{\partial t}$ مشتق زمانی متغیر حالت، $\mathcal{N}[\cdot; \lambda]$ عملگر دیفرانسیلی غیرخطی شامل مشتقات مکانی و جملات غیرخطی وابسته به بردار پارامترهای فیزیکی $\lambda \in \mathbb{R}^p$، و $\Omega \subset \mathbb{R}^d$ دامنه مکانی پیوسته با مرز $\partial\Omega$ است. این رابطه بیانگر تعادل نیروها و قوانین بقای حاکم بر فیزیک سامانه در هر نقطه مکانی و در هر لحظه زمانی است. به‌عنوان نمونه، در معادله برگرز با لزجت، عملگر دیفرانسیلی به‌صورت $\mathcal{N}[u;\lambda] = \lambda_1 u u_x - \lambda_2 u_{xx}$ با بردار پارامتر $\lambda = (\lambda_1, \lambda_2)$ تعریف می‌گردد.
 
-با فرض در اختیار داشتن مجموعه‌ای از داده‌های مشاهده‌شده (که ممکن است محدود، نامنظم یا آلوده به نویز باشند)، دو مسئله بنیادین قابل طرح است:
+با فرض در اختیار داشتن مجموعه‌ای از داده‌های اندازه‌گیری‌شده (که ممکن است محدود، نامنظم یا آلوده به نویز باشند)، دو مسئله بنیادین قابل طرح است:
 \begin{enumerate}
-\item \textbf{مسئله مستقیم (\lr{Forward Problem}):} با فرض معلوم بودن کامل بردار پارامترها $\lambda$ و شرایط مرزی و اولیه، هدف محاسبه و بازسازی میدان پاسخ $u(t,\mathbf{x})$ در سراسر دامنه زمانی-مکانی است.
-\item \textbf{مسئله معکوس (\lr{Inverse Problem}):} در شرایطی که بردار پارامترهای $\lambda$ مجهول بوده و مقادیری از $u(t,\mathbf{x})$ در نقاط پراکنده‌ای از دامنه مشاهده شده باشد، هدف تخمین و شناسایی دقیق پارامترهای فیزیکی $\lambda$ هم‌زمان با برازش میدان پاسخ است.
+\item \textbf{مسئله مستقیم (\lr{Forward Problem}):} با فرض معلوم بودن کامل بردار پارامترها $\lambda$ و شرایط مرزی و اولیه، هدف محاسبه و بازسازی میدان پاسخ $u(t,\mathbf{x})$ در سراسر دامنه زمانی-مکانی است. در این مسئله، شبکه عصبی نقش یک حل‌گر عددی بدون شبکه را ایفا می‌کند.
+\item \textbf{مسئله معکوس (\lr{Inverse Problem}):} در شرایطی که بردار پارامترهای $\lambda$ مجهول بوده و مقادیری از متغیر حالت $u(t,\mathbf{x})$ در نقاط پراکنده‌ای از دامنه اندازه‌گیری شده باشد، هدف کشف و تخمین دقیق پارامترهای فیزیکی $\lambda$ هم‌زمان با برازش میدان پاسخ است. در این حالت، شبکه عصبی فرآیند شناسایی سیستم را به انجام می‌رساند.
 \end{enumerate}
 
 ایده محوری در شبکه‌های آگاه از فیزیک بر پایه تقریب تابع جواب $u(t,\mathbf{x})$ توسط یک شبکه عصبی عمیق $u_\theta(t,\mathbf{x})$ با بردار پارامترهای وزن و بایاس $\theta$ بنا شده است. بر این اساس، عملگر باقیمانده دیفرانسیلی فیزیک $f(t,\mathbf{x})$ به‌صورت زیر تعریف می‌گردد:
@@ -25,7 +25,7 @@ u_t + \mathcal{N}[u; \lambda] = 0, \quad \mathbf{x} \in \Omega, \quad t \in [0,T
 f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda],
 \label{eq:residual}
 \end{equation}
-که در آن $u = u_\theta(t,\mathbf{x})$ خروجی شبکه عصبی است. ویژگی برجسته این چارچوب آن است که کلیه مشتقات جزئی ظاهرشده در $f$ (نظیر $u_t$ و مشتقات مکانی) با استفاده از مشتق‌گیری خودکار نسبت به ورودی‌های گراف محاسباتی ارزیابی می‌شوند. در نتیجه، $f(t,\mathbf{x})$ خود نمایانگر یک شبکه عصبی با پارامترهای مشترک $\theta$ است که اصطلاحاً «شبکه آگاه از فیزیک» نامیده می‌شود.
+که در آن $u = u_\theta(t,\mathbf{x})$ خروجی شبکه عصبی است. ویژگی برجسته این چارچوب آن است که کلیه مشتقات جزئی ظاهرشده در $f$ (نظیر $u_t$ و مشتقات مکانی) با استفاده از مشتق‌گیری خودکار نسبت به ورودی‌های گراف محاسباتی ارزیابی می‌شوند. در نتیجه، $f(t,\mathbf{x})$ خود نمایانگر یک شبکه عصبی با پارامترهای مشترک $\theta$ است که اصطلاحاً «شبکه باقیمانده آگاه از فیزیک» نامیده می‌شود.
 
 در صورتی که شبکه $u_\theta$ به جواب دقیق معادله میل کند، مقدار باقیمانده در تمامی نقاط دامنه به سمت صفر میل خواهد کرد ($f \to 0$). بنابراین، فرایند آموزش از طریق یک تابع هزینه ترکیبی که هم‌زمان خطای برازش داده‌ها و خطای عدم ارضای معادله دیفرانسیل را کمینه می‌سازد، هدایت می‌شود. شکل \ref{fig:pinn} نمای شماتیک این ساختار یکپارچه را نشان می‌دهد.
 
@@ -33,27 +33,39 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda],
 \centering
 \begin{latin}
 \begin{tikzpicture}[>=Stealth,
-  block/.style={rectangle, draw, thick, minimum width=2.4cm, minimum height=1.0cm, align=center, font=\small},
-  smallblock/.style={rectangle, draw, thick, minimum width=2.0cm, minimum height=1.0cm, align=center, font=\small}]
-  
-  % Top row
-  \node[smallblock] (input) {Input\\$(t, \mathbf{x})$};
-  \node[block, right=1.0cm of input] (net) {Neural Network\\$u_\theta(t, \mathbf{x})$};
-  \node[smallblock, right=1.0cm of net] (ad) {Automatic\\Diff};
-  \node[block, right=1.0cm of ad] (res) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
-  
-  % Bottom row
-  \node[block, below=1.5cm of ad] (loss) {Composite Loss\\$\mathrm{MSE}_u + \mathrm{MSE}_f$};
-  \node[smallblock, left=1.2cm of loss] (opt) {Optimizer\\Adam / L-BFGS};
-  
-  % Connections
+  block/.style={rectangle, draw=myblue!80!black, fill=myblue!5, thick, rounded corners=2pt, minimum width=2.5cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries},
+  procbox/.style={rectangle, draw=black!75, fill=black!4, thick, rounded corners=2pt, minimum width=2.2cm, minimum height=0.95cm, align=center, font=\footnotesize},
+  lossbox/.style={rectangle, draw=red!70!black, fill=red!5, thick, rounded corners=2pt, minimum width=2.8cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries},
+  optbox/.style={rectangle, draw=myblue!80!black, fill=myblue!10, thick, rounded corners=2pt, minimum width=2.4cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries}
+]
+  % Top row: Input -> Neural Network -> Autodiff -> PDE Residual
+  \node[procbox] (input) at (0, 0) {Input\\$(t, \mathbf{x})$};
+  \node[block] (net) at (3.2, 0) {Neural Network\\$u_\theta(t, \mathbf{x})$};
+  \node[procbox] (ad) at (6.6, 0) {Automatic\\Diff ($\partial_t, \partial_x, \dots$)};
+  \node[block] (res) at (10.0, 0) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
+
+  % Bottom row: Optimizer and Composite Loss
+  \node[optbox] (opt) at (3.2, -2.3) {Optimizer\\(Adam / L-BFGS)};
+  \node[lossbox] (loss) at (8.3, -2.3) {Composite Loss\\$\mathrm{MSE}_u + \mathrm{MSE}_f$};
+
+  % Top row arrows
   \draw[->, thick] (input) -- (net);
   \draw[->, thick] (net) -- (ad);
   \draw[->, thick] (ad) -- (res);
-  \draw[->, thick] (res.south) -- ++(0,-0.4) -| (loss.north east) node[pos=0.25, right, font=\footnotesize] {$f$ residual};
-  \draw[->, thick] (net.south) -- ++(0,-0.4) -| (loss.north west) node[pos=0.25, left, font=\footnotesize] {$u$ data};
-  \draw[->, thick] (loss) -- (opt);
-  \draw[->, thick, dashed] (opt.west) -- ++(-0.6,0) |- (net.west) node[pos=0.25, left, font=\footnotesize] {Update $\theta$};
+
+  % Downward arrows to Loss
+  \draw[->, thick] (net.south) -- ++(0,-0.5) -| ([xshift=-0.6cm]loss.north) 
+    node[pos=0.25, left, font=\scriptsize] {$u$ on IC/BC};
+  \draw[->, thick] (res.south) -- ++(0,-0.5) -| ([xshift=0.6cm]loss.north) 
+    node[pos=0.25, right, font=\scriptsize] {$f$ on Collocation};
+
+  % Loss to Optimizer
+  \draw[->, thick] (loss) -- (opt) node[midway, above, font=\scriptsize] {$\nabla_\theta \mathcal{L}$};
+
+  % Feedback: Optimizer updates Network parameters theta
+  \draw[->, thick, dashed, myblue!80!black] (opt.north) -- (net.south) 
+    node[midway, right, font=\scriptsize] {Update $\theta$};
+
 \end{tikzpicture}
 \end{latin}
 \caption{نمودار بلوکی چارچوب شبکه عصبی آگاه از فیزیک: تعامل شبکه پاسخ، مشتق‌گیری خودکار، شبکه باقیمانده و حلقه بهینه‌سازی}
@@ -63,7 +75,7 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda],
 \section{مدل‌های زمان‌پیوسته برای مسئله مستقیم}
 \label{sec:continuous}
 
-در مدل‌های زمان‌پیوسته، متغیرهای فضا و زمان به‌صورت هم‌زمان به‌عنوان ورودی‌های پیوسته به شبکه عصبی تغذیه می‌شوند: $(t,\mathbf{x}) \mapsto u_\theta(t,\mathbf{x})$. پارامترهای مجهول شبکه $\theta$ با کمینه‌سازی تابع هزینه زیر در طول فرایند آموزش بهینه‌سازی می‌گردند:
+در مدل‌های زمان‌پیوسته، متغیرهای فضا و زمان به‌صورت هم‌زمان به‌عنوان ورودی‌های پیوسته به شبکه عصبی تغذیه می‌شوند: $(t,\mathbf{x}) \mapsto u_\theta(t,\mathbf{x})$. این ویژگی موجب می‌شود که شبکه به یک تقریب‌زننده پیوسته در تمام دامنه فضا-زمان بدل گردد. پارامترهای مجهول شبکه $\theta$ با کمینه‌سازی تابع هزینه ترکیبی زیر بهینه‌سازی می‌شوند:
 \begin{equation}
 \mathcal{L}(\theta) = \mathrm{MSE}_u(\theta) + \mathrm{MSE}_f(\theta),
 \label{eq:loss-forward}
