@@ -1,0 +1,43 @@
+\contentsline {chapter}{سپاسگزاری}{پ}{section*.2}%
+\contentsline {chapter}{چکیده}{ت}{section*.4}%
+\contentsline {chapter}{فهرست اختصارات}{ث}{section*.6}%
+\contentsline {chapter}{فهرست تصاویر}{ح}{section*.9}%
+\contentsline {chapter}{فهرست جداول}{خ}{section*.11}%
+\contentsline {chapter}{\numberline {1}مقدمه و کلیات پژوهش}{1}{chapter.1}%
+\contentsline {section}{\numberline {1-1}طرح موضوع پژوهش}{2}{section.1.1}%
+\contentsline {section}{\numberline {1-2}بیان مسئله}{3}{section.1.2}%
+\contentsline {section}{\numberline {1-3}اهداف پژوهش}{3}{section.1.3}%
+\contentsline {section}{\numberline {1-4}پرسش‌های پژوهش}{4}{section.1.4}%
+\contentsline {section}{\numberline {1-5}روش‌شناسی پژوهش}{4}{section.1.5}%
+\contentsline {section}{\numberline {1-6}ساختار پایان‌نامه}{5}{section.1.6}%
+\contentsline {chapter}{\numberline {2}مبانی نظری و پیشینه پژوهش}{6}{chapter.2}%
+\contentsline {section}{\numberline {2-1}معادلات دیفرانسیل جزئی}{6}{section.2.1}%
+\contentsline {section}{\numberline {2-2}روش‌های عددی کلاسیک}{8}{section.2.2}%
+\contentsline {section}{\numberline {2-3}شبکه‌های عصبی مصنوعی}{9}{section.2.3}%
+\contentsline {section}{\numberline {2-4}آموزش شبکه‌های عصبی عمیق}{11}{section.2.4}%
+\contentsline {section}{\numberline {2-5}مشتق‌گیری خودکار}{12}{section.2.5}%
+\contentsline {section}{\numberline {2-6}پیشینه پژوهش}{13}{section.2.6}%
+\contentsline {section}{\numberline {2-7}جمع‌بندی فصل}{14}{section.2.7}%
+\contentsline {chapter}{\numberline {3}شبکه‌های عصبی آگاه از فیزیک}{15}{chapter.3}%
+\contentsline {section}{\numberline {3-1}صورت‌بندی کلی مسئله و ایده محوری}{15}{section.3.1}%
+\contentsline {section}{\numberline {3-2}مدل‌های زمان‌پیوسته برای مسئله مستقیم}{17}{section.3.2}%
+\contentsline {section}{\numberline {3-3}مدل‌های زمان‌گسسته}{18}{section.3.3}%
+\contentsline {section}{\numberline {3-4}مسئله معکوس و کشف پارامترهای فیزیکی}{18}{section.3.4}%
+\contentsline {section}{\numberline {3-5}ملاحظات عملی در پیاده‌سازی و آموزش}{19}{section.3.5}%
+\contentsline {section}{\numberline {3-6}جمع‌بندی فصل}{20}{section.3.6}%
+\contentsline {chapter}{\numberline {4}پیاده‌سازی و ارزیابی نتایج}{21}{chapter.4}%
+\contentsline {section}{\numberline {4-1}بستر محاسباتی و ابزارهای پیاده‌سازی}{21}{section.4.1}%
+\contentsline {section}{\numberline {4-2}حل‌گر مرجع طیفی و اعتبارسنجی آن}{22}{section.4.2}%
+\contentsline {section}{\numberline {4-3}حل مستقیم معادله برگرز}{23}{section.4.3}%
+\contentsline {section}{\numberline {4-4}کشف پارامترهای نامعلوم در مسئله معکوس}{25}{section.4.4}%
+\contentsline {section}{\numberline {4-5}بحث و تحلیل نتایج}{26}{section.4.5}%
+\contentsline {section}{\numberline {4-6}جمع‌بندی فصل}{28}{section.4.6}%
+\contentsline {chapter}{\numberline {5}نتیجه‌گیری و پیشنهادها}{29}{chapter.5}%
+\contentsline {section}{\numberline {5-1}خلاصه پژوهش}{29}{section.5.1}%
+\contentsline {section}{\numberline {5-2}یافته‌ها و دستاوردهای کلیدی}{30}{section.5.2}%
+\contentsline {section}{\numberline {5-3}پیشنهادها برای پژوهش‌های آینده}{31}{section.5.3}%
+\contentsline {chapter}{فهرست منابع}{32}{section*.26}%
+\contentsline {chapter}{واژه‌نامه}{34}{section*.28}%
+\contentsline {chapter}{پیوست الف: کد پیاده‌سازی محاسباتی}{36}{section*.32}%
+\contentsline {chapter}{فرم ارزیابی پایان‌نامه}{43}{section*.34}%
+\contentsline {chapter}{Abstract}{44}{section*.35}%
