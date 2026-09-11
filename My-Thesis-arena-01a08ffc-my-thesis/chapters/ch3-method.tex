@@ -27,48 +27,55 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda],
 \end{equation}
 که در آن $u = u_\theta(t,\mathbf{x})$ خروجی شبکه عصبی است. ویژگی برجسته این چارچوب آن است که کلیه مشتقات جزئی ظاهرشده در $f$ (نظیر $u_t$ و مشتقات مکانی) با استفاده از مشتق‌گیری خودکار نسبت به ورودی‌های گراف محاسباتی ارزیابی می‌شوند. در نتیجه، $f(t,\mathbf{x})$ خود نمایانگر یک شبکه عصبی با پارامترهای مشترک $\theta$ است که اصطلاحاً «شبکه باقیمانده آگاه از فیزیک» نامیده می‌شود.
 
-در صورتی که شبکه $u_\theta$ به جواب دقیق معادله میل کند، مقدار باقیمانده در تمامی نقاط دامنه به سمت صفر میل خواهد کرد ($f \to 0$). بنابراین، فرایند آموزش از طریق یک تابع هزینه ترکیبی که هم‌زمان خطای برازش داده‌ها و خطای عدم ارضای معادله دیفرانسیل را کمینه می‌سازد، هدایت می‌شود. شکل \ref{fig:pinn} نمای شماتیک این ساختار یکپارچه را نشان می‌دهد.
+در صورتی که شبکه $u_\theta$ به جواب دقیق معادله میل کند، مقدار باقیمانده در تمامی نقاط دامنه به سمت صفر میل خواهد کرد ($f \to 0$). بنابراین، فرایند آموزش از طریق یک تابع هزینه ترکیبی که هم‌زمان خطای برازش داده‌ها ($\mathrm{MSE}_u$) و خطای عدم ارضای معادله دیفرانسیل ($\mathrm{MSE}_f$) را کمینه می‌سازد، هدایت می‌شود. شکل \ref{fig:pinn} ساختار این چارچوب یکپارچه و جریان تبادل اطلاعات میان شبکه پاسخ، مشتق‌گیری خودکار، شبکه باقیمانده و الگوریتم بهینه‌سازی را نشان می‌دهد.
 
 \begin{figure}[t]
 \centering
 \begin{latin}
 \begin{tikzpicture}[>=Stealth,
-  block/.style={rectangle, draw=myblue!80!black, fill=myblue!5, thick, rounded corners=2pt, minimum width=2.5cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries},
-  procbox/.style={rectangle, draw=black!75, fill=black!4, thick, rounded corners=2pt, minimum width=2.2cm, minimum height=0.95cm, align=center, font=\footnotesize},
-  lossbox/.style={rectangle, draw=red!70!black, fill=red!5, thick, rounded corners=2pt, minimum width=2.8cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries},
-  optbox/.style={rectangle, draw=myblue!80!black, fill=myblue!10, thick, rounded corners=2pt, minimum width=2.4cm, minimum height=0.95cm, align=center, font=\footnotesize\bfseries}
+  netblock/.style={rectangle, draw=myblue!80!black, fill=myblue!5, thick, rounded corners=3pt, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\footnotesize\bfseries},
+  procblock/.style={rectangle, draw=black!70, fill=black!3, thick, rounded corners=3pt, minimum width=2.1cm, minimum height=0.9cm, align=center, font=\footnotesize},
+  lossblock/.style={rectangle, draw=red!70!black, fill=red!5, thick, rounded corners=3pt, minimum width=2.3cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
+  totalloss/.style={rectangle, draw=red!80!black, fill=red!8, thick, rounded corners=3pt, minimum width=3.0cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
+  optblock/.style={rectangle, draw=myblue!80!black, fill=myblue!8, thick, rounded corners=3pt, minimum width=3.0cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries}
 ]
-  % Top row: Input -> Neural Network -> Autodiff -> PDE Residual
-  \node[procbox] (input) at (0, 0) {Input\\$(t, \mathbf{x})$};
-  \node[block] (net) at (3.2, 0) {Neural Network\\$u_\theta(t, \mathbf{x})$};
-  \node[procbox] (ad) at (6.6, 0) {Automatic\\Diff ($\partial_t, \partial_x, \dots$)};
-  \node[block] (res) at (10.0, 0) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
+  % Top row (y = 0)
+  \node[procblock] (input) at (0.8, 0) {Input\\$(t, \mathbf{x})$};
+  \node[netblock] (net) at (4.3, 0) {Neural Network\\$u_\theta(t, \mathbf{x})$};
+  \node[procblock] (ad) at (7.9, 0) {Automatic Diff\\$(\partial_t, \partial_x, \partial_{xx})$};
+  \node[netblock] (res) at (11.5, 0) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
 
-  % Bottom row: Optimizer and Composite Loss
-  \node[optbox] (opt) at (3.2, -2.3) {Optimizer\\(Adam / L-BFGS)};
-  \node[lossbox] (loss) at (8.3, -2.3) {Composite Loss\\$\mathrm{MSE}_u + \mathrm{MSE}_f$};
+  % Middle row: Losses (y = -1.9)
+  \node[lossblock] (loss_u) at (4.3, -1.9) {Data Loss\\$\mathrm{MSE}_u$};
+  \node[totalloss] (loss_tot) at (7.9, -1.9) {Total Loss\\$\mathcal{L}(\theta) = \mathrm{MSE}_u + \mathrm{MSE}_f$};
+  \node[lossblock] (loss_f) at (11.5, -1.9) {Physics Loss\\$\mathrm{MSE}_f$};
 
-  % Top row arrows
+  % Bottom row: Optimizer (y = -3.5)
+  \node[optblock] (opt) at (7.9, -3.5) {Optimizer\\(Adam / L-BFGS)};
+
+  % Forward arrows across top row
   \draw[->, thick] (input) -- (net);
   \draw[->, thick] (net) -- (ad);
   \draw[->, thick] (ad) -- (res);
 
-  % Downward arrows to Loss
-  \draw[->, thick] (net.south) -- ++(0,-0.5) -| ([xshift=-0.6cm]loss.north) 
-    node[pos=0.25, left, font=\scriptsize] {$u$ on IC/BC};
-  \draw[->, thick] (res.south) -- ++(0,-0.5) -| ([xshift=0.6cm]loss.north) 
-    node[pos=0.25, right, font=\scriptsize] {$f$ on Collocation};
+  % Downward arrows to separate loss components
+  \draw[->, thick] (net) -- (loss_u) node[midway, right=1pt, font=\scriptsize, text=black!75] {IC / BC data};
+  \draw[->, thick] (res) -- (loss_f) node[midway, right=1pt, font=\scriptsize, text=black!75] {Collocation pts};
 
-  % Loss to Optimizer
-  \draw[->, thick] (loss) -- (opt) node[midway, above, font=\scriptsize] {$\nabla_\theta \mathcal{L}$};
+  % Inward horizontal arrows to Total Loss
+  \draw[->, thick] (loss_u) -- (loss_tot);
+  \draw[->, thick] (loss_f) -- (loss_tot);
 
-  % Feedback: Optimizer updates Network parameters theta
-  \draw[->, thick, dashed, myblue!80!black] (opt.north) -- (net.south) 
-    node[midway, right, font=\scriptsize] {Update $\theta$};
+  % Total Loss to Optimizer
+  \draw[->, thick] (loss_tot) -- (opt) node[midway, right=2pt, font=\scriptsize] {$\nabla_\theta \mathcal{L}$};
+
+  % Feedback loop: Optimizer updates Neural Network parameters theta
+  \draw[->, thick, dashed, myblue!85!black] (opt.west) -- (2.4, -3.5) -- (2.4, 0.95) -- (4.3, 0.95) -- (net.north);
+  \node[font=\scriptsize\bfseries, text=myblue!85!black, rotate=90, anchor=south] at (2.4, -1.3) {Update parameters $\theta$};
 
 \end{tikzpicture}
 \end{latin}
-\caption{نمودار بلوکی چارچوب شبکه عصبی آگاه از فیزیک: تعامل شبکه پاسخ، مشتق‌گیری خودکار، شبکه باقیمانده و حلقه بهینه‌سازی}
+\caption{نمودار بلوکی چارچوب شبکه عصبی آگاه از فیزیک: تفکیک خطای داده و خطای فیزیک، تجمیع در تابع هزینه کل و حلقه بهینه‌سازی پارامترها}
 \label{fig:pinn}
 \end{figure}
 
