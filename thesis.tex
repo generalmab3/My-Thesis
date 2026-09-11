@@ -1,0 +1,201 @@
+% !TeX program = xelatex
+% =====================================================================
+%  پایان‌نامه کارشناسی علوم کامپیوتر — دانشگاه بناب
+%  عنوان: شبکه‌های عصبی آگاه از فیزیک برای حل مسائل مستقیم و معکوس
+%          معادلات دیفرانسیل جزئی غیرخطی
+%  پژوهشگر: محمد امیر بابازاد — استاد راهنما: دکتر بابک آذرنوید
+%
+%  روش ساخت:
+%    xelatex thesis.tex
+%    xelatex thesis.tex
+%  یا: make  (یا اجرای فایل build.sh)
+% =====================================================================
+\documentclass[12pt,oneside,a4paper]{book}
+
+% ---------- صفحه‌بندی و حاشیه‌ها (طبق دستورالعمل دانشگاه بناب) ----------
+% حاشیه راست ۳/۵، حاشیه چپ/بالا/پایین ۲/۵ سانتی‌متر
+\usepackage{geometry}
+\geometry{right=3.5cm,left=2.5cm,top=2.5cm,bottom=2.5cm,headheight=14pt,footskip=1.25cm}
+
+% ---------- بسته‌های ریاضی و عمومی (قبل از زی‌پرشین) ----------
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\graphicspath{{figs/}}
+\usepackage{xcolor}
+\definecolor{myblue}{RGB}{0,51,102}
+\usepackage{booktabs,array,multirow}
+\usepackage{caption}
+\captionsetup{font=footnotesize,labelfont=bf,justification=centering,labelsep=colon}
+\usepackage{listings}
+\lstset{
+  language=Python,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{myblue}\bfseries,
+  commentstyle=\color{black!55},
+  stringstyle=\color{red!70!black},
+  numbers=left,
+  numberstyle=\tiny\color{black!55},
+  stepnumber=1,
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{black!60},
+  breaklines=true,
+  breakatwhitespace=false,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=1.5em,
+  xrightmargin=0.5em
+}
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{shapes,shapes.geometric,arrows.meta,positioning,calc}
+
+% ---------- شکل عنوان فصل‌ها و بخش‌ها (قبل از زی‌پرشین برای حفظ تنظیمات جهت) ----------
+\makeatletter
+\def\@makechapterhead#1{%
+  \vspace*{10\p@}%
+  {\parindent \z@ \centering \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+      \Large\bfseries \@chapapp\space \thechapter
+      \par\nobreak
+      \vskip 20\p@
+    \fi
+    \interlinepenalty\@M
+    \Large \bfseries #1\par\nobreak
+    \vskip 35\p@
+  }}
+\def\@makeschapterhead#1{%
+  \vspace*{10\p@}%
+  {\parindent \z@ \centering
+    \normalfont
+    \interlinepenalty\@M
+    \Large \bfseries #1\par\nobreak
+    \vskip 35\p@
+  }}
+\makeatother
+
+% ---------- هایپررف (قبل از زی‌پرشین) ----------
+\usepackage[hidelinks]{hyperref}
+
+% ---------- زی‌پرشین (حتماً آخرین بسته) ----------
+\usepackage{xepersian}
+\settextfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
+\setdigitfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
+\setlatintextfont[Scale=MatchLowercase]{TeX Gyre Termes}
+
+% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین)
+\makeatletter
+\@ifundefined{DefaultMathDigits}{\DefaultMathsDigits}{\DefaultMathDigits}
+\makeatother
+
+% تنظیم جداکننده شماره‌گذاری (فصل-بخش، فصل-شکل، فصل-فرمول) با استاندارد زی‌پرشین
+\SepMark{-}
+\numberwithin{equation}{chapter}
+
+\hypersetup{
+  pdftitle={شبکه‌های عصبی آگاه از فیزیک برای حل مسائل مستقیم و معکوس معادلات دیفرانسیل جزئی غیرخطی},
+  pdfauthor={محمد امیر بابازاد},
+  pdfsubject={پایان‌نامه کارشناسی علوم کامپیوتر — دانشگاه بناب}
+}
+
+% ---------- فاصله خطوط ۱/۵ و تورفتگی پاراگراف ----------
+\setstretch{1.5}
+\setlength{\parindent}{0.75cm}
+\setlength{\parskip}{0pt}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% ---------- محیط‌های قضیه/تعریف/مثال ----------
+\theoremstyle{definition}
+\newtheorem{definition}{تعریف}[chapter]
+\newtheorem{example}{مثال}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{قضیه}[chapter]
+\newtheorem{lemma}{لم}[chapter]
+\theoremstyle{remark}
+\newtheorem*{remark}{نکته}
+\renewcommand{\proofname}{برهان}
+
+% ---------- شماره صفحه الفبایی برای بخش آغازین (الف، ب، ج، ...) ----------
+\newcommand{\farsipageletter}[1]{%
+\ifcase#1\or الف\or ب\or پ\or ت\or ث\or ج\or چ\or ح\or خ\or د\or ذ\or ر\or ز\or ژ\or س\or ش\or ص\or ض\or ط\or ظ\or ع\or غ\or ف\or ق\or ک\or گ\or ل\or م\or ن\or و\or ه\or ی\else\fi}
+
+\renewcommand{\bibname}{فهرست منابع}
+
+% ---------- نتایج عددی بخش عملی (خروجی کد؛ در صورت اجرای مجدد به‌روز شود) ----------
+\newcommand{\FwdRelErr}{$2.15\times 10^{-2}$}
+\newcommand{\FwdLossAdam}{$5.85\times 10^{-3}$}
+\newcommand{\FwdLossLBFGS}{$8.71\times 10^{-5}$}
+\newcommand{\FwdMSEu}{$2.35\times 10^{-5}$}
+\newcommand{\FwdMSEf}{$6.36\times 10^{-5}$}
+\newcommand{\LamIClean}{$0.912$}
+\newcommand{\LamIIClean}{$4.22\times 10^{-3}$}
+\newcommand{\LamIErrClean}{$8.8\%$}
+\newcommand{\LamIIErrClean}{$32.6\%$}
+\newcommand{\LamINoisy}{$0.923$}
+\newcommand{\LamIINoisy}{$3.97\times 10^{-3}$}
+\newcommand{\LamIErrNoisy}{$7.7\%$}
+\newcommand{\LamIIErrNoisy}{$24.9\%$}
+
+\pagestyle{plain}
+
+\begin{document}
+
+% ================= بخش آغازین =================
+\pagenumbering{arabic}
+
+\input{front/besmellah}
+\input{front/cover-fa}
+
+% شروع شماره‌گذاری الفبایی از صفحه بعد از عنوان
+\pagenumbering{arabic}
+\renewcommand{\thepage}{\farsipageletter{\value{page}}}
+
+\input{front/rights}
+\input{front/dedication}
+\input{front/ack}
+\input{front/abstract-fa}
+\input{front/symbols}
+
+\clearpage
+\begin{singlespace}
+\tableofcontents
+\end{singlespace}
+
+\clearpage
+\begin{singlespace}
+\listoffigures
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
+\end{singlespace}
+
+\clearpage
+\begin{singlespace}
+\listoftables
+\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
+\end{singlespace}
+
+% ================= متن اصلی =================
+\clearpage
+\pagenumbering{arabic}
+
+\input{chapters/ch1-intro}
+\input{chapters/ch2-background}
+\input{chapters/ch3-method}
+\input{chapters/ch4-implementation}
+\input{chapters/ch5-conclusion}
+
+% ================= بخش پایانی =================
+\input{back/references}
+\input{back/glossary}
+\input{back/appendix-code}
+\input{back/evaluation}
+\input{back/abstract-en}
+\input{back/cover-en}
+
+\end{document}
