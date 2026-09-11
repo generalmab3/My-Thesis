@@ -3,44 +3,11 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{Abstract}
 \begin{latin}
-Numerical solution of nonlinear partial differential equations is a
-fundamental problem in scientific computing. Classical numerical methods,
-while accurate and widely used, depend on computational meshes and struggle
-in high dimensions; on the other hand, purely data-driven deep learning
-models require large amounts of training data and offer no guarantee that
-their outputs respect the laws of physics. In recent years, the framework
-of physics-informed neural networks has been introduced as a way to combine
-physical knowledge (the governing equation of the system) with machine
-learning. The aim of this thesis is to study, implement, and evaluate this
-framework for solving forward and inverse problems involving nonlinear
-partial differential equations.
+The numerical solution of nonlinear partial differential equations (PDEs) is a fundamental challenge in scientific computing and engineering. While classical numerical methods are mathematically rigorous and widely adopted, they inherently rely on computational mesh generation and suffer from the curse of dimensionality in high-dimensional domains. On the other hand, purely data-driven deep learning models typically demand vast volumes of training data and lack formal guarantees regarding physical consistency. In recent years, the physics-informed neural network (PINN) framework has emerged as a promising paradigm that seamlessly integrates governing physical laws into deep learning architectures. This thesis presents a comprehensive study, implementation, and empirical evaluation of PINNs for solving both forward and inverse problems in nonlinear PDEs.
 
-In this work, we first review the required theoretical background, including
-partial differential equations, classical numerical methods, neural networks,
-automatic differentiation, and the background of physics-aware machine
-learning. We then describe the physics-informed framework, including the
-definition of the residual network, the combined data-physics loss function,
-and the continuous- and discrete-time models. In the practical part, the
-continuous-time model is implemented for the one-dimensional Burgers
-equation in Python using the JAX library, and an independent reference
-solver based on the Fourier spectral method and fourth-order time stepping
-is developed to generate the exact solution and verified against the
-Cole-Hopf semi-analytical solution.
+First, we establish the theoretical foundations, including partial differential equations, classical numerical schemes, deep feedforward networks, optimization algorithms, and automatic differentiation. We then formulate the continuous- and discrete-time PINN frameworks, detailing the construction of residual networks and composite loss functions. In the computational section, the continuous-time model is implemented for the one-dimensional viscous Burgers equation in Python using the JAX library. An independent high-precision reference solver based on the Fourier spectral method with fourth-order exponential time-differencing (ETDRK4) is developed and verified against the semi-analytical Cole-Hopf solution.
 
-In the forward problem, the solution over the whole spatio-temporal domain
-is reconstructed using only 200 initial and boundary data points, achieving
-a relative error of \FwdRelErr\ in the $L_2$ norm; the error is mostly
-concentrated in the thin shock layer. In the inverse problem, the equation
-coefficients are identified from 5000 scattered observations: the advection
-coefficient with an error of \LamIErrClean\ and the diffusion coefficient
-with an error of \LamIIErrClean\ in the noise-free case, and \LamIErrNoisy\
-and \LamIIErrNoisy\ respectively under one percent noise. The results show
-that this framework achieves an acceptable solution with little data, is
-reasonably robust to noise, and that its main bottleneck is resolving the
-steep solution layers and the inherent sensitivity of identifying small
-coefficients.
+In the forward problem, the continuous solution across the spatio-temporal domain is accurately reconstructed using only 200 initial and boundary data points, achieving a relative $L_2$ error of \FwdRelErr\ compared to the spectral reference; spatial error analysis demonstrates that the error is predominantly confined to the sharp shock layer. In the inverse problem, the unknown advection and diffusion coefficients are successfully identified from 5000 scattered spatio-temporal observations: the advection coefficient is discovered with an error of \LamIErrClean\ and the diffusion coefficient with \LamIIErrClean\ in the noise-free case, and with errors of \LamIErrNoisy\ and \LamIIErrNoisy\ respectively under one percent Gaussian noise. The results confirm the exceptional data efficiency and robustness of physics-informed neural networks, while highlighting that sharp gradient resolution and the inherent sensitivity of small diffusion parameters remain key computational considerations.
 
-\textbf{Keywords:} Physics-informed neural network, Nonlinear partial
-differential equation, Forward problem, Inverse problem, Burgers equation,
-Automatic differentiation
+\textbf{Keywords:} Physics-Informed Neural Networks, Nonlinear Partial Differential Equations, Forward Problem, Inverse Problem, Burgers Equation, Automatic Differentiation, Fourier Spectral Method.
 \end{latin}

@@ -52,7 +52,7 @@
 \settextfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
 \setdigitfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
 \setlatintextfont[Scale=MatchLowercase]{TeX Gyre Termes}
-% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین قدیمی و جدید)
+% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین)
 \makeatletter
 \@ifundefined{DefaultMathDigits}{\DefaultMathsDigits}{\DefaultMathDigits}
 \makeatother
@@ -68,7 +68,7 @@
 \setlength{\parindent}{0.75cm}
 \setlength{\parskip}{0pt}
 
-% ---------- شماره‌گذاری فصل-بخش با خط تیره (۱-۱، ۲-۳، ...) ----------
+% ---------- شماره‌گذاری فصل-بخش با خط پیوند (۱-۱، ۲-۳، ...) ----------
 \renewcommand{\thesection}{\thechapter-\arabic{section}}
 \renewcommand{\thesubsection}{\thesection-\arabic{subsection}}
 \renewcommand{\thesubsubsection}{\thesubsection-\arabic{subsubsection}}
@@ -167,16 +167,16 @@
 \end{singlespace}
 
 \clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{فهرست شکل‌ها}
 \begin{singlespace}
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures
 \end{singlespace}
 
 \clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{فهرست جدول‌ها}
 \begin{singlespace}
+\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
 \listoftables
 \end{singlespace}
 
