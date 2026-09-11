@@ -88,30 +88,30 @@ y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right),
 \begin{figure}[t]
 \centering
 \begin{latin}
-\begin{tikzpicture}[>=Stealth, node distance=1.6cm,
+\begin{tikzpicture}[>=Stealth,
   neuron/.style={circle, draw, minimum size=7mm, inner sep=0pt},
   ann/.style={->, thin}]
   % input layer
   \node[neuron] (i1) {$x_1$};
-  \node[neuron, below=0.5cm of i1] (i2) {$x_2$};
+  \node[neuron, below=0.6cm of i1] (i2) {$x_2$};
   % hidden layer 1
   \node[neuron, right=1.8cm of i1, yshift=0.6cm] (h11) {};
-  \node[neuron, below=0.5cm of h11] (h12) {};
-  \node[neuron, below=0.5cm of h12] (h13) {};
+  \node[neuron, below=0.6cm of h11] (h12) {};
+  \node[neuron, below=0.6cm of h12] (h13) {};
   % hidden layer 2
   \node[neuron, right=1.8cm of h11] (h21) {};
-  \node[neuron, below=0.5cm of h21] (h22) {};
-  \node[neuron, below=0.5cm of h22] (h23) {};
+  \node[neuron, below=0.6cm of h21] (h22) {};
+  \node[neuron, below=0.6cm of h22] (h23) {};
   % output
   \node[neuron, right=1.8cm of h22] (o1) {$y$};
   % connections
   \foreach \s in {i1,i2} \foreach \d in {h11,h12,h13} \draw[ann] (\s) -- (\d);
   \foreach \s in {h11,h12,h13} \foreach \d in {h21,h22,h23} \draw[ann] (\s) -- (\d);
   \foreach \s in {h21,h22,h23} \draw[ann] (\s) -- (o1);
-  % labels
-  \node[above=0.2cm of h12, font=\small] {Hidden layers};
-  \node[above=0.2cm of i1, font=\small] {Input};
-  \node[above=0.2cm of o1, font=\small] {Output};
+  % labels (placed safely without overlapping neurons)
+  \node[above=0.35cm of h11, xshift=0.9cm, font=\small] {Hidden layers};
+  \node[above=0.35cm of i1, font=\small] {Input};
+  \node[above=0.35cm of o1, font=\small] {Output};
 \end{tikzpicture}
 \end{latin}
 \caption{ساختار شماتیک یک شبکه عصبی پرسپترون چندلایه با دو متغیر ورودی، دو لایه پنهان و یک خروجی اسکالر}

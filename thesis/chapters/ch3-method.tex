@@ -32,22 +32,28 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda],
 \begin{figure}[t]
 \centering
 \begin{latin}
-\begin{tikzpicture}[>=Stealth, node distance=2.2cm,
-  block/.style={rectangle, draw, thick, minimum width=2.6cm, minimum height=1.1cm, align=center, font=\small},
-  smallblock/.style={rectangle, draw, thick, minimum width=2.2cm, minimum height=1.1cm, align=center, font=\small}]
+\begin{tikzpicture}[>=Stealth,
+  block/.style={rectangle, draw, thick, minimum width=2.4cm, minimum height=1.0cm, align=center, font=\small},
+  smallblock/.style={rectangle, draw, thick, minimum width=2.0cm, minimum height=1.0cm, align=center, font=\small}]
+  
+  % Top row
   \node[smallblock] (input) {Input\\$(t, \mathbf{x})$};
-  \node[block, right=1.2cm of input] (net) {Deep neural\\network $u_\theta$};
-  \node[smallblock, right=1.2cm of net] (ad) {Automatic\\differentiation};
-  \node[block, right=1.2cm of ad] (res) {PDE residual\\$f_\theta = u_t + \mathcal{N}[u]$};
-  \node[block, below=1.4cm of ad] (loss) {Loss\\$\mathrm{MSE}_u + \mathrm{MSE}_f$};
+  \node[block, right=1.0cm of input] (net) {Neural Network\\$u_\theta(t, \mathbf{x})$};
+  \node[smallblock, right=1.0cm of net] (ad) {Automatic\\Diff};
+  \node[block, right=1.0cm of ad] (res) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
+  
+  % Bottom row
+  \node[block, below=1.5cm of ad] (loss) {Composite Loss\\$\mathrm{MSE}_u + \mathrm{MSE}_f$};
   \node[smallblock, left=1.2cm of loss] (opt) {Optimizer\\Adam / L-BFGS};
+  
+  % Connections
   \draw[->, thick] (input) -- (net);
   \draw[->, thick] (net) -- (ad);
   \draw[->, thick] (ad) -- (res);
-  \draw[->, thick] (net) -- (loss) node[midway, right, font=\small] {$u$ data};
-  \draw[->, thick] (res) -- (loss);
+  \draw[->, thick] (res.south) -- ++(0,-0.4) -| (loss.north east) node[pos=0.25, right, font=\footnotesize] {$f$ residual};
+  \draw[->, thick] (net.south) -- ++(0,-0.4) -| (loss.north west) node[pos=0.25, left, font=\footnotesize] {$u$ data};
   \draw[->, thick] (loss) -- (opt);
-  \draw[->, thick, dashed] (opt) -- (net) node[midway, left, font=\small] {update $\theta$};
+  \draw[->, thick, dashed] (opt.west) -- ++(-0.6,0) |- (net.west) node[pos=0.25, left, font=\footnotesize] {Update $\theta$};
 \end{tikzpicture}
 \end{latin}
 \caption{نمودار بلوکی چارچوب شبکه عصبی آگاه از فیزیک: تعامل شبکه پاسخ، مشتق‌گیری خودکار، شبکه باقیمانده و حلقه بهینه‌سازی}

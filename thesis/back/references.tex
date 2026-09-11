@@ -1,11 +1,32 @@
 % فهرست منابع
+\makeatletter
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\makeatother
+
 \chapter*{\bibname}
 \phantomsection
 \addcontentsline{toc}{chapter}{\bibname}
 
-{\singlespacing
+\begin{singlespace}
 \begin{latin}
 \begin{thebibliography}{99}
+\setlength{\itemsep}{5pt}
 
 \bibitem{raissi2019}
 M. Raissi, P. Perdikaris, and G. E. Karniadakis, “Physics-informed neural
@@ -116,4 +137,4 @@ programs,” 2018. [Online]. Available: github.com/google/jax
 
 \end{thebibliography}
 \end{latin}
-}
+\end{singlespace}
