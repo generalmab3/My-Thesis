@@ -82,7 +82,7 @@
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{burgers_snapshots}
+\includegraphics[width=0.85\textwidth]{burgers_snapshots}
 \caption{مقایسه پروفیل‌های زمانی حل دقیق مرجع و پیش‌بینی شبکه آگاه از فیزیک در سه لحظه $t=0.25, 0.5, 0.75$}
 \label{fig:snapshots}
 \end{figure}
@@ -101,13 +101,13 @@
 \label{tab:comparison}
 \centering
 \singlespacing
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|p{3.2cm}|p{3.2cm}|p{2.3cm}|p{2.3cm}|p{2.4cm}|}
 \hline
-\textbf{منبع پژوهش} & \textbf{معماری شبکه} & \textbf{نقاط داده اولیه/مرزی} & \textbf{نقاط هم‌مکانی} & \textbf{خطای نسبی $L_2$} \\
+\textbf{منبع پژوهش} & \textbf{معماری شبکه} & \textbf{داده مرزی} & \textbf{نقاط هم‌مکانی} & \textbf{خطای نسبی $L_2$} \\
 \hline
-رئیسی و همکاران \cite{raissi2019} & ۹ لایه پنهان، ۲۰ نورون & ۱۰۰ & ۱۰۰۰۰ & $6.7\times 10^{-4}$ \\
+رئیسی و همکاران \cite{raissi2019} & ۹ لایه، ۲۰ نورون & ۱۰۰ & ۱۰۰۰۰ & $6.7\times 10^{-4}$ \\
 \hline
-پژوهش حاضر & ۴ لایه پنهان، ۵۰ نورون & ۲۰۰ & ۱۰۰۰۰ & \FwdRelErr \\
+پژوهش حاضر & ۴ لایه، ۵۰ نورون & ۲۰۰ & ۱۰۰۰۰ & \FwdRelErr \\
 \hline
 \end{tabular}
 \end{table}
@@ -139,9 +139,9 @@
 \label{tab:inverse}
 \centering
 \singlespacing
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|p{2.8cm}|p{2.6cm}|p{2.4cm}|p{2.6cm}|p{2.4cm}|}
 \hline
-\textbf{سناریوی داده} & \textbf{$\lambda_1$ شناسایی‌شده} & \textbf{خطای نسبی $\lambda_1$} & \textbf{$\lambda_2$ شناسایی‌شده} & \textbf{خطای نسبی $\lambda_2$} \\
+\textbf{سناریوی داده} & \textbf{$\lambda_1$ برآوردی} & \textbf{خطای $\lambda_1$} & \textbf{$\lambda_2$ برآوردی} & \textbf{خطای $\lambda_2$} \\
 \hline
 بدون نویز (تمیز) & \LamIClean & \LamIErrClean & \LamIIClean & \LamIIErrClean \\
 \hline

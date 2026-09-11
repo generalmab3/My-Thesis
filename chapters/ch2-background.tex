@@ -108,7 +108,7 @@ y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right),
   \foreach \s in {i1,i2} \foreach \d in {h11,h12,h13} \draw[ann] (\s) -- (\d);
   \foreach \s in {h11,h12,h13} \foreach \d in {h21,h22,h23} \draw[ann] (\s) -- (\d);
   \foreach \s in {h21,h22,h23} \draw[ann] (\s) -- (o1);
-  % labels (placed safely without overlapping neurons)
+  % labels
   \node[above=0.35cm of h11, xshift=0.9cm, font=\small] {Hidden layers};
   \node[above=0.35cm of i1, font=\small] {Input};
   \node[above=0.35cm of o1, font=\small] {Output};
@@ -125,7 +125,7 @@ y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right),
 \label{tab:activations}
 \centering
 \singlespacing
-\begin{tabular}{|c|c|c|}
+\begin{tabular}{|p{4.2cm}|p{3.8cm}|p{5.4cm}|}
 \hline
 \textbf{عنوان تابع} & \textbf{فرمول ریاضی} & \textbf{ویژگی رفتاری} \\
 \hline
