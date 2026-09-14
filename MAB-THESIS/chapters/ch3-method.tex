@@ -32,48 +32,50 @@ f(t,\mathbf{x}) := u_t + \mathcal{N}[u; \lambda]
 \begin{figure}[t]
 \centering
 \begin{latin}
+\resizebox{0.98\linewidth}{!}{%
 \begin{tikzpicture}[>=Stealth,
-  netblock/.style={rectangle, draw=myblue!80!black, fill=myblue!5, thick, rounded corners=3pt, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\footnotesize\bfseries},
-  procblock/.style={rectangle, draw=black!70, fill=black!3, thick, rounded corners=3pt, minimum width=2.1cm, minimum height=0.9cm, align=center, font=\footnotesize},
-  lossblock/.style={rectangle, draw=red!70!black, fill=red!5, thick, rounded corners=3pt, minimum width=2.3cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
-  totalloss/.style={rectangle, draw=red!80!black, fill=red!8, thick, rounded corners=3pt, minimum width=3.0cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
-  optblock/.style={rectangle, draw=myblue!80!black, fill=myblue!8, thick, rounded corners=3pt, minimum width=3.0cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries}
+  netblock/.style={rectangle, draw=myblue!85!black, fill=myblue!8, thick, rounded corners=4pt, minimum width=3.0cm, minimum height=1.2cm, align=center, font=\small\bfseries, inner sep=6pt},
+  procblock/.style={rectangle, draw=black!75, fill=black!4, thick, rounded corners=4pt, minimum width=2.6cm, minimum height=1.2cm, align=center, font=\small, inner sep=6pt},
+  lossblock/.style={rectangle, draw=red!75!black, fill=red!6, thick, rounded corners=4pt, minimum width=2.8cm, minimum height=1.15cm, align=center, font=\small\bfseries, inner sep=6pt},
+  totalloss/.style={rectangle, draw=red!85!black, fill=red!12, thick, rounded corners=4pt, minimum width=3.8cm, minimum height=1.2cm, align=center, font=\small\bfseries, inner sep=6pt},
+  optblock/.style={rectangle, draw=myblue!90!black, fill=myblue!12, thick, rounded corners=4pt, minimum width=3.8cm, minimum height=1.2cm, align=center, font=\small\bfseries, inner sep=6pt}
 ]
-  % Top row (y = 0)
-  \node[procblock] (input) at (0.8, 0) {Input\\$(t, \mathbf{x})$};
-  \node[netblock] (net) at (4.3, 0) {Neural Network\\$u_\theta(t, \mathbf{x})$};
-  \node[procblock] (ad) at (7.9, 0) {Automatic Diff\\$(\partial_t, \partial_x, \partial_{xx})$};
-  \node[netblock] (res) at (11.5, 0) {PDE Residual\\$f_\theta(t, \mathbf{x})$};
+  % Top row: Computation Flow (y = 0)
+  \node[procblock] (input) at (0.5, 0) {Input\\[1mm]$(t, \mathbf{x})$};
+  \node[netblock] (net) at (4.6, 0) {Neural Network\\[1mm]$u_\theta(t, \mathbf{x})$};
+  \node[procblock] (ad) at (8.8, 0) {Automatic Diff\\[1mm]$(\partial_t, \partial_x, \partial_{xx})$};
+  \node[netblock] (res) at (13.0, 0) {PDE Residual\\[1mm]$f_\theta(t, \mathbf{x})$};
 
-  % Middle row: Losses (y = -1.9)
-  \node[lossblock] (loss_u) at (4.3, -1.9) {Data Loss\\$\mathrm{MSE}_u$};
-  \node[totalloss] (loss_tot) at (7.9, -1.9) {Total Loss\\$\mathcal{L}(\theta) = \mathrm{MSE}_u + \mathrm{MSE}_f$};
-  \node[lossblock] (loss_f) at (11.5, -1.9) {Physics Loss\\$\mathrm{MSE}_f$};
+  % Middle row: Losses (y = -2.6)
+  \node[lossblock] (loss_u) at (4.6, -2.6) {Data Loss\\[1mm]$\mathrm{MSE}_u$};
+  \node[totalloss] (loss_tot) at (8.8, -2.6) {Total Loss\\[1mm]$\mathcal{L}(\theta) = \mathrm{MSE}_u + \mathrm{MSE}_f$};
+  \node[lossblock] (loss_f) at (13.0, -2.6) {Physics Loss\\[1mm]$\mathrm{MSE}_f$};
 
-  % Bottom row: Optimizer (y = -3.5)
-  \node[optblock] (opt) at (7.9, -3.5) {Optimizer\\(Adam / L-BFGS)};
+  % Bottom row: Optimizer (y = -4.9)
+  \node[optblock] (opt) at (8.8, -4.9) {Optimizer\\[1mm](Adam / L-BFGS)};
 
   % Forward arrows across top row
-  \draw[->, thick] (input) -- (net);
-  \draw[->, thick] (net) -- (ad);
-  \draw[->, thick] (ad) -- (res);
+  \draw[->, very thick] (input) -- (net);
+  \draw[->, very thick] (net) -- (ad);
+  \draw[->, very thick] (ad) -- (res);
 
   % Downward arrows to separate loss components
-  \draw[->, thick] (net) -- (loss_u) node[midway, right=1pt, font=\scriptsize, text=black!75] {IC / BC data};
-  \draw[->, thick] (res) -- (loss_f) node[midway, right=1pt, font=\scriptsize, text=black!75] {Collocation pts};
+  \draw[->, very thick] (net) -- (loss_u) node[midway, right=2pt, font=\scriptsize, text=black!75] {IC / BC data};
+  \draw[->, very thick] (res) -- (loss_f) node[midway, right=2pt, font=\scriptsize, text=black!75] {Collocation pts};
 
   % Inward horizontal arrows to Total Loss
-  \draw[->, thick] (loss_u) -- (loss_tot);
-  \draw[->, thick] (loss_f) -- (loss_tot);
+  \draw[->, very thick] (loss_u) -- (loss_tot);
+  \draw[->, very thick] (loss_f) -- (loss_tot);
 
   % Total Loss to Optimizer
-  \draw[->, thick] (loss_tot) -- (opt) node[midway, right=2pt, font=\scriptsize] {$\nabla_\theta \mathcal{L}$};
+  \draw[->, very thick] (loss_tot) -- (opt) node[midway, right=3pt, font=\small\bfseries] {$\nabla_\theta \mathcal{L}$};
 
   % Feedback loop: Optimizer updates Neural Network parameters theta
-  \draw[->, thick, dashed, myblue!85!black] (opt.west) -- (2.4, -3.5) -- (2.4, 0.95) -- (4.3, 0.95) -- (net.north);
-  \node[font=\scriptsize\bfseries, text=myblue!85!black, rotate=90, anchor=south] at (2.4, -1.3) {Update parameters $\theta$};
+  \draw[->, very thick, dashed, myblue!90!black] (opt.west) -- (2.45, -4.9) -- (2.45, 1.3) -- (4.6, 1.3) -- (net.north);
+  \node[font=\scriptsize\bfseries, text=myblue!90!black, fill=white, inner sep=2pt, rotate=90, anchor=center] at (2.45, -1.8) {Update parameters $\theta$};
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \end{latin}
 \caption{نمودار بلوکی چارچوب شبکه عصبی آگاه از فیزیک: تفکیک خطای داده و خطای فیزیک، تجمیع در تابع هزینه کل و حلقه بهینه‌سازی پارامترها}
 \label{fig:pinn}
