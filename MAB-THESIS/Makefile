@@ -1,6 +1,6 @@
 all: thesis.pdf
 
-thesis.pdf: thesis.tex front/*.tex chapters/*.tex back/*.tex code/pinn_burgers.py figs/*
+thesis.pdf: thesis.tex metadata.tex front/*.tex chapters/*.tex back/*.tex code/pinn_burgers.py figs/*
 	xelatex -interaction=nonstopmode thesis.tex
 	xelatex -interaction=nonstopmode thesis.tex
 
