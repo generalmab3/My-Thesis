@@ -1,8 +1,7 @@
 % !TeX program = xelatex
 % =====================================================================
 %  پایان‌نامه کارشناسی علوم کامپیوتر — دانشگاه بناب
-%  عنوان: شبکه‌های عصبی آگاه از فیزیک برای حل مسائل مستقیم و معکوس
-%          معادلات دیفرانسیل جزئی غیرخطی
+%  عنوان: حل مسئله مستقیم معادله غیرخطی برگرز با استفاده از شبکه‌های عصبی آگاه از فیزیک
 %  پژوهشگر: محمد امیر بابازاد — استاد راهنما: دکتر بابک آذرنوید
 %
 %  روش ساخت:
@@ -11,6 +10,9 @@
 %  یا: make  (یا اجرای فایل build.sh)
 % =====================================================================
 \documentclass[12pt,oneside,a4paper]{book}
+
+% ---------- مشخصات پایان‌نامه (Metadata) ----------
+\input{metadata}
 
 % ---------- صفحه‌بندی و حاشیه‌ها (طبق دستورالعمل دانشگاه بناب) ----------
 % حاشیه راست ۳/۵، حاشیه چپ/بالا/پایین ۲/۵ سانتی‌متر
@@ -29,15 +31,23 @@
 \usepackage{listings}
 \lstset{
   language=Python,
-  basicstyle=\footnotesize\ttfamily,
+  basicstyle=\scriptsize\ttfamily,
   keywordstyle=\color{myblue}\bfseries,
   commentstyle=\color{black!55},
   stringstyle=\color{red!70!black},
-  numbers=left, numberstyle=\tiny\color{black!55}, stepnumber=1, numbersep=8pt,
-  frame=single, rulecolor=\color{black!60},
-  breaklines=true, breakatwhitespace=false,
-  showstringspaces=false, tabsize=4,
-  xleftmargin=1em
+  numbers=left,
+  numberstyle=\tiny\color{black!55},
+  stepnumber=1,
+  numbersep=6pt,
+  frame=single,
+  rulecolor=\color{black!60},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=flexible,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=1.2em,
+  xrightmargin=0.5em
 }
 \usepackage{enumitem}
 \setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
@@ -45,41 +55,8 @@
 \usepackage{setspace}
 \usepackage{tikz}
 \usetikzlibrary{shapes,shapes.geometric,arrows.meta,positioning,calc}
-\usepackage[hidelinks,hypertexnames=false,plainpages=false]{hyperref}
 
-% ---------- زی‌پرشین (حتماً آخرین بسته) ----------
-\usepackage{xepersian}
-\settextfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
-\setdigitfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
-\setlatintextfont[Scale=MatchLowercase]{TeX Gyre Termes}
-% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین قدیمی و جدید)
-\makeatletter
-\@ifundefined{DefaultMathDigits}{\DefaultMathsDigits}{\DefaultMathDigits}
-\makeatother
-
-\hypersetup{
-  pdftitle={شبکه‌های عصبی آگاه از فیزیک برای حل مسائل مستقیم و معکوس معادلات دیفرانسیل جزئی غیرخطی},
-  pdfauthor={محمد امیر بابازاد},
-  pdfsubject={پایان‌نامه کارشناسی علوم کامپیوتر — دانشگاه بناب}
-}
-
-% ---------- فاصله خطوط ۱/۵ و تورفتگی پاراگراف ----------
-\setstretch{1.5}
-\setlength{\parindent}{0.75cm}
-\setlength{\parskip}{0pt}
-
-% ---------- شماره‌گذاری فصل-بخش با خط تیره (۱-۱، ۲-۳، ...) ----------
-\renewcommand{\thesection}{\thechapter-\arabic{section}}
-\renewcommand{\thesubsection}{\thesection-\arabic{subsection}}
-\renewcommand{\thesubsubsection}{\thesubsection-\arabic{subsubsection}}
-\renewcommand{\thefigure}{\thechapter-\arabic{figure}}
-\renewcommand{\thetable}{\thechapter-\arabic{table}}
-\numberwithin{equation}{chapter}
-\renewcommand{\theequation}{\thechapter-\arabic{equation}}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{2}
-
-% ---------- شکل عنوان فصل‌ها و بخش‌ها ----------
+% ---------- شکل عنوان فصل‌ها و بخش‌ها (قبل از زی‌پرشین) ----------
 \makeatletter
 \def\@makechapterhead#1{%
   \vspace*{10\p@}%
@@ -91,7 +68,7 @@
     \fi
     \interlinepenalty\@M
     \Large \bfseries #1\par\nobreak
-    \vskip 40\p@
+    \vskip 35\p@
   }}
 \def\@makeschapterhead#1{%
   \vspace*{10\p@}%
@@ -99,21 +76,47 @@
     \normalfont
     \interlinepenalty\@M
     \Large \bfseries #1\par\nobreak
-    \vskip 40\p@
+    \vskip 35\p@
   }}
-\renewcommand\section{\@startsection{section}{1}{\z@}%
-  {-3.5ex \@plus -1ex \@minus -.2ex}{2.3ex \@plus.2ex}{\normalfont\large\bfseries}}
-\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
-  {-3.25ex\@plus -1ex \@minus -.2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
-\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
-  {-3.25ex\@plus -1ex \@minus -.2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
 \makeatother
 
-% ---------- محیط‌های قضیه/تعریف/مثال ----------
+% ---------- هایپررف (قبل از زی‌پرشین) ----------
+\usepackage[hidelinks]{hyperref}
+
+% ---------- زی‌پرشین (حتما آخرین بسته) ----------
+\usepackage{xepersian}
+\settextfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
+\setdigitfont[Path=fonts/,Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,Scale=1.1]{Vazirmatn}
+\setlatintextfont[Scale=MatchLowercase]{TeX Gyre Termes}
+
+% ارقام لاتین در فرمول‌ها (سازگار با زی‌پرشین)
+\makeatletter
+\@ifundefined{DefaultMathDigits}{\DefaultMathsDigits}{\DefaultMathDigits}
+\makeatother
+
+% تنظیم جداکننده شماره‌گذاری (فصل-بخش، فصل-شکل، فصل-فرمول) با استاندارد زی‌پرشین
+\SepMark{-}
+\numberwithin{equation}{chapter}
+
+\hypersetup{
+  pdftitle={\ProjectTitleFa},
+  pdfauthor={\StudentNameFa},
+  pdfsubject={پایان‌نامه \DegreeNameFa\ \FieldNameFa\ — \UniversityNameFa}
+}
+
+% ---------- فاصله خطوط ۱/۵ و تورفتگی پاراگراف ----------
+\setstretch{1.5}
+\setlength{\parindent}{0.75cm}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2.5em}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% ---------- محیط‌های قضیه/تعریف/مثال با فونت استاندارد ایستاده ----------
 \theoremstyle{definition}
 \newtheorem{definition}{تعریف}[chapter]
 \newtheorem{example}{مثال}[chapter]
-\theoremstyle{plain}
 \newtheorem{theorem}{قضیه}[chapter]
 \newtheorem{lemma}{لم}[chapter]
 \theoremstyle{remark}
@@ -126,20 +129,12 @@
 
 \renewcommand{\bibname}{فهرست منابع}
 
-% ---------- نتایج عددی بخش عملی (خروجی کد؛ در صورت اجرای مجدد به‌روز شود) ----------
+% ---------- نتایج عددی بخش عملی (خروجی کد، در صورت اجرای مجدد به‌روز شود) ----------
 \newcommand{\FwdRelErr}{$2.15\times 10^{-2}$}
 \newcommand{\FwdLossAdam}{$5.85\times 10^{-3}$}
 \newcommand{\FwdLossLBFGS}{$8.71\times 10^{-5}$}
 \newcommand{\FwdMSEu}{$2.35\times 10^{-5}$}
 \newcommand{\FwdMSEf}{$6.36\times 10^{-5}$}
-\newcommand{\LamIClean}{$0.912$}
-\newcommand{\LamIIClean}{$4.22\times 10^{-3}$}
-\newcommand{\LamIErrClean}{$8.8\%$}
-\newcommand{\LamIIErrClean}{$32.6\%$}
-\newcommand{\LamINoisy}{$0.923$}
-\newcommand{\LamIINoisy}{$3.97\times 10^{-3}$}
-\newcommand{\LamIErrNoisy}{$7.7\%$}
-\newcommand{\LamIIErrNoisy}{$24.9\%$}
 
 \pagestyle{plain}
 
@@ -167,17 +162,17 @@
 \end{singlespace}
 
 \clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{فهرست شکل‌ها}
 \begin{singlespace}
 \listoffigures
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
 \end{singlespace}
 
 \clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{فهرست جدول‌ها}
 \begin{singlespace}
 \listoftables
+\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
 \end{singlespace}
 
 % ================= متن اصلی =================

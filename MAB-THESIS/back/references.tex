@@ -1,9 +1,32 @@
 % فهرست منابع
-{\singlespacing
-\begin{latin}
-\begin{thebibliography}{99}
+\makeatletter
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\makeatother
+
+\chapter*{فهرست منابع}
 \phantomsection
 \addcontentsline{toc}{chapter}{فهرست منابع}
+
+\begin{singlespace}
+\begin{latin}
+\begin{thebibliography}{99}
+\setlength{\itemsep}{2pt}
 
 \bibitem{raissi2019}
 M. Raissi, P. Perdikaris, and G. E. Karniadakis, “Physics-informed neural
@@ -80,6 +103,10 @@ Research, vol. 18, pp. 1–43, 2018.
 R. J. LeVeque, Finite Difference Methods for Ordinary and Partial Differential
 Equations. SIAM, 2007.
 
+\bibitem{zienkiewicz2005}
+O. C. Zienkiewicz, R. L. Taylor, and J. Z. Zhu, The Finite Element Method: Its
+Basis and Fundamentals, 6th ed. Elsevier Butterworth-Heinemann, 2005.
+
 \bibitem{evans2010}
 L. C. Evans, Partial Differential Equations, 2nd ed. American Mathematical
 Society, 2010.
@@ -114,4 +141,4 @@ programs,” 2018. [Online]. Available: github.com/google/jax
 
 \end{thebibliography}
 \end{latin}
-}
+\end{singlespace}
