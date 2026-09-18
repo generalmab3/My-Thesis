@@ -65,11 +65,12 @@ u_{xx} &= \text{\lr{jax.grad(jax.grad(u\_net, argnums=2), argnums=2)(params, t, 
 \label{tab:fwdconfig}
 \centering
 \singlespacing
+\renewcommand{\arraystretch}{1.25}
 \begin{tabular}{|p{4.8cm}|p{8.2cm}|}
 \hline
-\textbf{مولفه ساختاری} & \textbf{مشخصات انتخابی} \\
+\textbf{مؤلفه ساختاری} & \textbf{مشخصات انتخابی} \\
 \hline
-معماری شبکه عصبی & ۴ لایه پنهان، ۵۰ نورون در هر لایه، فعال‌ساز تانژانت هیپربولیک \\
+معماری شبکه عصبی & ۴ لایه پنهان، ۵۰ نورون در هر لایه، تابع فعال‌ساز تانژانت هیپربولیک \\
 \hline
 تعداد کل پارامترهای شبکه & ۷۸۵۱ پارامتر وزن و بایاس \\
 \hline
@@ -79,7 +80,7 @@ u_{xx} &= \text{\lr{jax.grad(jax.grad(u\_net, argnums=2), argnums=2)(params, t, 
 \hline
 الگوریتم مقداردهی اولیه & روش گزاویه (گلوروت) \\
 \hline
-راهبرد بهینه‌سازی & ۶۰۰۰ گام آدام ($\eta=10^{-3}$) و سپس \mbox{\lr{L-BFGS-B}} تا همگرایی کامل \\
+راهبرد بهینه‌سازی & ۶۰۰۰ گام آدام ($\eta=10^{-3}$) و سپس \lr{L-BFGS-B} تا همگرایی کامل \\
 \hline
 دقت محاسباتی ممیز شناور & ۶۴ بیتی (\lr{Float64}) \\
 \hline
@@ -126,7 +127,8 @@ u_{xx} &= \text{\lr{jax.grad(jax.grad(u\_net, argnums=2), argnums=2)(params, t, 
 \label{tab:comparison}
 \centering
 \singlespacing
-\begin{tabular}{|p{3.8cm}|p{4.2cm}|p{4.2cm}|}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|p{4.2cm}|>{\centering\arraybackslash}p{4.3cm}|>{\centering\arraybackslash}p{4.5cm}|}
 \hline
 \textbf{شاخص مقایسه‌ای} & \textbf{رئیسی و همکاران \cite{raissi2019}} & \textbf{پژوهش حاضر} \\
 \hline
