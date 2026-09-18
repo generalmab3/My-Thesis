@@ -138,14 +138,19 @@ u_\theta(t,x) &= \mathbf{W}^{(L)} \mathbf{h}^{(L-1)} + b^{(L)}
 این خاصیت مانع از صفر شدن مشتقات مرتبه بالاتر در گراف محاسباتی می‌گردد.
 
 \subsection{گام دوم: استخراج مشتقات جزئی زمانی و مکانی با قاعده زنجیره‌ای}
-برای تشکیل معادله برگرز، نیازمند محاسبه مشتق مرتبه اول زمانی $u_t = \frac{\partial u_\theta}{\partial t}$، مشتق مرتبه اول مکانی $u_x = \frac{\partial u_\theta}{\partial x}$ و مشتق مرتبه دوم مکانی $u_{xx} = \frac{\partial^2 u_\theta}{\partial x^2}$ هستیم. با اعمال مستقیم قاعده زنجیره‌ای بر روی گراف محاسباتی شبکه عصبی، مشتق خروجی نسبت به متغیر مکانی $x$ به‌صورت تحلیلی از رابطه زیر حاصل می‌شود:
+برای تشکیل معادله برگرز، نیازمند محاسبه مشتق مرتبه اول زمانی $u_t = \frac{\partial u_\theta}{\partial t}$، مشتق مرتبه اول مکانی $u_x = \frac{\partial u_\theta}{\partial x}$ و مشتق مرتبه دوم مکانی $u_{xx} = \frac{\partial^2 u_\theta}{\partial x^2}$ هستیم. در گراف محاسباتی شبکه، این مشتقات با انتشار مستقیم قاعده زنجیره‌ای در طول لایه‌ها محاسبه می‌شوند:
 \begin{equation}
-\frac{\partial u_\theta}{\partial x} = \mathbf{W}^{(L)} \left( \prod_{l=1}^{L-1} \operatorname{diag}\left(\sigma'\left(\mathbf{z}^{(l)}\right)\right) \mathbf{W}^{(l)} \right) \begin{bmatrix} 0 \\ 1 \end{bmatrix}
+\frac{\partial \mathbf{h}^{(l)}}{\partial x} = \operatorname{diag}\left(\sigma'\left(\mathbf{z}^{(l)}\right)\right) \mathbf{W}^{(l)} \frac{\partial \mathbf{h}^{(l-1)}}{\partial x}, \quad l=1,\dots,L-1
+\label{eq:chain-recursion}
+\end{equation}
+با مقدار آغازین $\frac{\partial \mathbf{h}^{(0)}}{\partial x} = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$، مشتق مکانی خروجی به‌صورت زیر حاصل می‌شود:
+\begin{equation}
+\frac{\partial u_\theta}{\partial x} = \mathbf{W}^{(L)} \frac{\partial \mathbf{h}^{(L-1)}}{\partial x}
 \label{eq:ux-chain}
 \end{equation}
-به همین ترتیب، مشتق زمانی $u_t$ با جایگزینی بردار پایه $\begin{bmatrix} 1 \\ 0 \end{bmatrix}$ به دست می‌آید:
+به همین ترتیب، مشتق زمانی $u_t$ با مقدار آغازین $\frac{\partial \mathbf{h}^{(0)}}{\partial t} = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$ به دست می‌آید:
 \begin{equation}
-\frac{\partial u_\theta}{\partial t} = \mathbf{W}^{(L)} \left( \prod_{l=1}^{L-1} \operatorname{diag}\left(\sigma'\left(\mathbf{z}^{(l)}\right)\right) \mathbf{W}^{(l)} \right) \begin{bmatrix} 1 \\ 0 \end{bmatrix}
+\frac{\partial u_\theta}{\partial t} = \mathbf{W}^{(L)} \frac{\partial \mathbf{h}^{(L-1)}}{\partial t}
 \label{eq:ut-chain}
 \end{equation}
 برای محاسبه مشتق مرتبه دوم مکانی $u_{xx}$، مشتق‌گیری خودکار یک بار دیگر بر روی گراف حاصل از $\frac{\partial u_\theta}{\partial x}$ نسبت به ورودی $x$ اعمال می‌شود:
