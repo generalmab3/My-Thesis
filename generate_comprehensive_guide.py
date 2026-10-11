@@ -1,547 +1,779 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Defense Guide Generator for Mohammad Amir Babazad's B.Sc. Thesis
-University of Bonab - Supervisor: Dr. Babak Azarnavid
-Clean, robust Persian typography using ReportLab with exact RTL BiDi rendering.
+Professional, Master-level B.Sc. Defense Guide Generator (PDF)
+for Mohammad Amir Babazad's Thesis at University of Bonab.
+Supervisor: Dr. Babak Azarnavid.
 """
 
-import os, sys
+import os
 import arabic_reshaper
 from bidi.algorithm import get_display
+
 from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-from reportlab.lib import colors
 
-# Register Persian Fonts
-pdfmetrics.registerFont(TTFont('Vazir', 'MAB-THESIS/fonts/Vazirmatn-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Vazir-Bold', 'MAB-THESIS/fonts/Vazirmatn-Bold.ttf'))
+# -------------------------------------------------------------
+# Font Registration & Reshaper Setup
+# -------------------------------------------------------------
+FONT_REGULAR_PATH = "MAB-THESIS/fonts/Vazirmatn-Regular.ttf"
+FONT_BOLD_PATH = "MAB-THESIS/fonts/Vazirmatn-Bold.ttf"
 
-class PersianDocBuilder:
-    def __init__(self, filename):
-        self.filename = filename
-        self.c = canvas.Canvas(filename, pagesize=A4)
-        self.width, self.height = A4
-        self.margin_x = 38
-        self.margin_top = 36
-        self.margin_bottom = 34
-        self.content_width = self.width - 2 * self.margin_x
-        self.y = self.height - self.margin_top
-        self.page_num = 1
+pdfmetrics.registerFont(TTFont("Vazir", FONT_REGULAR_PATH))
+pdfmetrics.registerFont(TTFont("Vazir-Bold", FONT_BOLD_PATH))
 
-    def reshape_line(self, text, base_dir='R'):
-        if not text:
-            return ""
-        t = str(text).strip()
-        reshaped = arabic_reshaper.reshape(t)
-        return get_display(reshaped, base_dir=base_dir)
+reshaper = arabic_reshaper.ArabicReshaper(configuration={
+    "delete_harakat": True,
+    "support_ligatures": True,
+})
 
-    def wrap_text_rtl(self, text, font_name, font_size, max_w):
-        words = str(text).split()
-        lines = []
-        cur = []
-        for w in words:
-            test_words = cur + [w]
-            test_str = " ".join(test_words)
-            shaped = self.reshape_line(test_str, base_dir='R')
-            if pdfmetrics.stringWidth(shaped, font_name, font_size) <= max_w:
-                cur.append(w)
-            else:
-                if cur:
-                    lines.append(" ".join(cur))
-                cur = [w]
-        if cur:
-            lines.append(" ".join(cur))
-        return lines
+def fa(text):
+    """Shape Persian/Arabic text and reorder for RTL display."""
+    if not text:
+        return ""
+    reshaped = reshaper.reshape(str(text))
+    return get_display(reshaped, base_dir="R")
 
-    def check_page_break(self, needed_height):
-        if self.y - needed_height < self.margin_bottom:
-            self.draw_footer()
-            self.c.showPage()
-            self.page_num += 1
-            self.y = self.height - self.margin_top
-            self.draw_header()
+# -------------------------------------------------------------
+# Color Constants
+# -------------------------------------------------------------
+C_NAVY_DARK    = colors.HexColor("#0F2043")
+C_NAVY_BLUE    = colors.HexColor("#1A4480")
+C_ACCENT_BLUE  = colors.HexColor("#2980B9")
+C_TEAL_DARK    = colors.HexColor("#0D6E6E")
+C_CRIMSON      = colors.HexColor("#B91C1C")
+C_GOLD         = colors.HexColor("#D97706")
+C_CHARCOAL     = colors.HexColor("#1E293B")
+C_GRAY_TEXT    = colors.HexColor("#475569")
+C_LIGHT_BG     = colors.HexColor("#F8FAFC")
+C_CARD_BORDER  = colors.HexColor("#E2E8F0")
+C_Q_BG         = colors.HexColor("#FEF2F2")
+C_Q_BORDER     = colors.HexColor("#FECACA")
+C_A_BG         = colors.HexColor("#F0FDF4")
+C_A_BORDER     = colors.HexColor("#BBF7D0")
+C_CALLOUT_BG   = colors.HexColor("#EFF6FF")
+C_CALLOUT_BOR  = colors.HexColor("#BFDBFE")
+C_WHITE        = colors.white
 
-    def draw_header(self):
-        self.c.saveState()
-        self.c.setFont('Vazir', 8)
-        self.c.setFillColor(colors.HexColor('#64748B'))
-        hdr = self.reshape_line("راهنمای جامع تسلط بر پایان‌نامه و آمادگی برای جلسه دفاع — دانشگاه بناب", base_dir='R')
-        self.c.drawRightString(self.width - self.margin_x, self.height - 23, hdr)
-        self.c.setStrokeColor(colors.HexColor('#CBD5E1'))
-        self.c.setLineWidth(0.6)
-        self.c.line(self.margin_x, self.height - 27, self.width - self.margin_x, self.height - 27)
-        self.c.restoreState()
+# -------------------------------------------------------------
+# Numbered Canvas for Total Page Count
+# -------------------------------------------------------------
+class NumberedCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        super(NumberedCanvas, self).__init__(*args, **kwargs)
+        self._saved_page_states = []
 
-    def draw_footer(self):
-        self.c.saveState()
-        self.c.setFont('Vazir', 8)
-        self.c.setFillColor(colors.HexColor('#64748B'))
-        ftr = self.reshape_line(f"صفحه {self.page_num}", base_dir='R')
-        self.c.drawCentredString(self.width / 2.0, 19, ftr)
-        name = self.reshape_line("محمد امیر بابازاد — استاد راهنما: دکتر بابک آذرنوید", base_dir='R')
-        self.c.drawString(self.margin_x, 19, name)
-        self.c.setStrokeColor(colors.HexColor('#CBD5E1'))
-        self.c.setLineWidth(0.6)
-        self.c.line(self.margin_x, 28, self.width - self.margin_x, 28)
-        self.c.restoreState()
-
-    def add_title(self, text, subtitle=None, meta=None):
-        self.c.setFont('Vazir-Bold', 14.5)
-        self.c.setFillColor(colors.HexColor('#003366'))
-        shaped = self.reshape_line(text, base_dir='R')
-        self.c.drawCentredString(self.width / 2.0, self.y, shaped)
-        self.y -= 18
-        
-        if subtitle:
-            self.c.setFont('Vazir', 9.5)
-            self.c.setFillColor(colors.HexColor('#334155'))
-            shaped_sub = self.reshape_line(subtitle, base_dir='R')
-            self.c.drawCentredString(self.width / 2.0, self.y, shaped_sub)
-            self.y -= 15
-
-        if meta:
-            self.c.setFont('Vazir', 8.5)
-            self.c.setFillColor(colors.HexColor('#1E3A8A'))
-            shaped_meta = self.reshape_line(meta, base_dir='R')
-            self.c.drawCentredString(self.width / 2.0, self.y, shaped_meta)
-            self.y -= 13
-
-        self.c.setStrokeColor(colors.HexColor('#003366'))
-        self.c.setLineWidth(1.2)
-        self.c.line(self.margin_x, self.y, self.width - self.margin_x, self.y)
-        self.y -= 10
-
-    def add_heading1(self, text):
-        self.check_page_break(40)
-        self.y -= 6
-        self.c.setFont('Vazir-Bold', 11)
-        self.c.setFillColor(colors.HexColor('#003366'))
-        shaped = self.reshape_line(text, base_dir='R')
-        self.c.drawRightString(self.width - self.margin_x, self.y, shaped)
-        self.y -= 4
-        self.c.setStrokeColor(colors.HexColor('#003366'))
-        self.c.setLineWidth(0.7)
-        self.c.line(self.margin_x, self.y, self.width - self.margin_x, self.y)
-        self.y -= 9
-
-    def add_heading2(self, text):
-        self.check_page_break(26)
-        self.y -= 4
-        self.c.setFont('Vazir-Bold', 9.8)
-        self.c.setFillColor(colors.HexColor('#8B0000'))
-        shaped = self.reshape_line(text, base_dir='R')
-        self.c.drawRightString(self.width - self.margin_x, self.y, shaped)
-        self.y -= 10
-
-    def add_heading3(self, text):
-        self.check_page_break(20)
-        self.y -= 3
-        self.c.setFont('Vazir-Bold', 9)
-        self.c.setFillColor(colors.HexColor('#1E3A8A'))
-        shaped = self.reshape_line(text, base_dir='R')
-        self.c.drawRightString(self.width - self.margin_x, self.y, shaped)
-        self.y -= 9
-
-    def add_paragraph(self, text, font_size=8.6, leading=13.0, bold=False, color='#1E293B', indent=0):
-        font_name = 'Vazir-Bold' if bold else 'Vazir'
-        lines = self.wrap_text_rtl(text, font_name, font_size, self.content_width - indent)
-        total_h = len(lines) * leading + 2
-        self.check_page_break(total_h)
-        
-        self.c.setFont(font_name, font_size)
-        self.c.setFillColor(colors.HexColor(color))
-        
-        for l in lines:
-            shaped = self.reshape_line(l, base_dir='R')
-            self.c.drawRightString(self.width - self.margin_x - indent, self.y, shaped)
-            self.y -= leading
-        self.y -= 2
-
-    def add_bullet(self, text, bold_prefix="", font_size=8.6, leading=13.0):
-        full_text = f"• {bold_prefix} {text}" if bold_prefix else f"• {text}"
-        self.add_paragraph(full_text, font_size=font_size, leading=leading, indent=8)
-
-    def add_callout(self, text, title=None, bg_color='#F0F9FF', border_color='#0284C7', title_color='#0369A1'):
-        font_size = 8.4
-        leading = 12.6
-        padding = 6
-        inner_w = self.content_width - 2 * padding
-        
-        title_lines = self.wrap_text_rtl(title, 'Vazir-Bold', 9, inner_w) if title else []
-        body_lines = self.wrap_text_rtl(text, 'Vazir', font_size, inner_w)
-        
-        h = len(title_lines) * 14 + len(body_lines) * leading + 2 * padding + 2
-        self.check_page_break(h + 6)
-        
-        top_y = self.y
-        bot_y = self.y - h
-        
-        self.c.saveState()
-        self.c.setFillColor(colors.HexColor(bg_color))
-        self.c.setStrokeColor(colors.HexColor(border_color))
-        self.c.setLineWidth(0.8)
-        self.c.roundRect(self.margin_x, bot_y, self.content_width, h, 3, fill=1, stroke=1)
-        self.c.restoreState()
-        
-        cur_y = top_y - padding - 6
-        if title_lines:
-            self.c.setFont('Vazir-Bold', 9)
-            self.c.setFillColor(colors.HexColor(title_color))
-            for l in title_lines:
-                shaped = self.reshape_line(l, base_dir='R')
-                self.c.drawRightString(self.width - self.margin_x - padding, cur_y, shaped)
-                cur_y -= 14
-        
-        self.c.setFont('Vazir', font_size)
-        self.c.setFillColor(colors.HexColor('#1E293B'))
-        for l in body_lines:
-            shaped = self.reshape_line(l, base_dir='R')
-            self.c.drawRightString(self.width - self.margin_x - padding, cur_y, shaped)
-            cur_y -= leading
-            
-        self.y = bot_y - 6
-
-    def add_qa_box(self, question, answer):
-        padding = 5.5
-        inner_w = self.content_width - 2 * padding
-        q_lines = self.wrap_text_rtl(question, 'Vazir-Bold', 8.6, inner_w)
-        a_lines = self.wrap_text_rtl(answer, 'Vazir', 8.3, inner_w)
-        
-        q_h = len(q_lines) * 13 + 2 * padding
-        a_h = len(a_lines) * 12.3 + padding + 4
-        h = q_h + a_h
-        
-        self.check_page_break(h + 5)
-        
-        top_y = self.y
-        bot_y = self.y - h
-        
-        self.c.saveState()
-        self.c.setFillColor(colors.HexColor('#F8FAFC'))
-        self.c.setStrokeColor(colors.HexColor('#CBD5E1'))
-        self.c.setLineWidth(0.6)
-        self.c.roundRect(self.margin_x, bot_y, self.content_width, h, 3, fill=1, stroke=1)
-        
-        # Header strip for question
-        self.c.setFillColor(colors.HexColor('#FEF2F2'))
-        self.c.rect(self.margin_x, top_y - q_h, self.content_width, q_h, fill=1, stroke=0)
-        self.c.setStrokeColor(colors.HexColor('#FECACA'))
-        self.c.line(self.margin_x, top_y - q_h, self.width - self.margin_x, top_y - q_h)
-        self.c.restoreState()
-        
-        cur_y = top_y - padding - 4.5
-        self.c.setFont('Vazir-Bold', 8.6)
-        self.c.setFillColor(colors.HexColor('#991B1B'))
-        for l in q_lines:
-            shaped = self.reshape_line(l, base_dir='R')
-            self.c.drawRightString(self.width - self.margin_x - padding, cur_y, shaped)
-            cur_y -= 13
-            
-        cur_y = top_y - q_h - padding - 4.5
-        self.c.setFont('Vazir', 8.3)
-        self.c.setFillColor(colors.HexColor('#14532D'))
-        for l in a_lines:
-            shaped = self.reshape_line(l, base_dir='R')
-            self.c.drawRightString(self.width - self.margin_x - padding, cur_y, shaped)
-            cur_y -= 12.3
-            
-        self.y = bot_y - 5.5
-
-    def add_table(self, data, col_widths, headers=None, bg_header='#003366', bg_row1='#FFFFFF', bg_row2='#F8FAFC', col_aligns=None):
-        padding = 4
-        font_size = 8.0
-        leading = 11.8
-        
-        all_rows = []
-        if headers:
-            all_rows.append((headers, True))
-        for r in data:
-            all_rows.append((r, False))
-            
-        row_heights = []
-        row_wrapped_lines = []
-        
-        if not col_aligns:
-            col_aligns = ['R'] * len(col_widths)
-            
-        for r_idx, (row, is_hdr) in enumerate(all_rows):
-            f_name = 'Vazir-Bold' if is_hdr else 'Vazir'
-            max_lines = 1
-            cols_lines = []
-            for c_idx, cell_text in enumerate(row):
-                w = col_widths[c_idx] - 2 * padding
-                lines = self.wrap_text_rtl(cell_text, f_name, font_size, w)
-                cols_lines.append(lines)
-                if len(lines) > max_lines:
-                    max_lines = len(lines)
-            row_wrapped_lines.append(cols_lines)
-            row_heights.append(max_lines * leading + 2 * padding)
-            
-        start_x = self.margin_x
-        for r_idx, (row, is_hdr) in enumerate(all_rows):
-            h = row_heights[r_idx]
-            self.check_page_break(h)
-            
-            top_y = self.y
-            bot_y = self.y - h
-            
-            self.c.saveState()
-            if is_hdr:
-                self.c.setFillColor(colors.HexColor(bg_header))
-            else:
-                self.c.setFillColor(colors.HexColor(bg_row2 if r_idx % 2 == 0 else bg_row1))
-            self.c.setStrokeColor(colors.HexColor('#CBD5E1'))
-            self.c.setLineWidth(0.5)
-            self.c.rect(start_x, bot_y, sum(col_widths), h, fill=1, stroke=1)
-            
-            # Vertical column lines
-            cur_x = start_x
-            for w in col_widths[:-1]:
-                cur_x += w
-                self.c.line(cur_x, bot_y, cur_x, top_y)
-            self.c.restoreState()
-            
-            f_name = 'Vazir-Bold' if is_hdr else 'Vazir'
-            t_color = '#FFFFFF' if is_hdr else '#1E293B'
-            self.c.setFont(f_name, font_size)
-            self.c.setFillColor(colors.HexColor(t_color))
-            
-            cols_lines = row_wrapped_lines[r_idx]
-            for c_idx, lines in enumerate(cols_lines):
-                col_left = start_x + sum(col_widths[c_idx+1:])
-                col_right = col_left + col_widths[c_idx]
-                align = col_aligns[c_idx] if not is_hdr else 'C'
-                
-                text_y = top_y - padding - 5.5
-                for l in lines:
-                    shaped = self.reshape_line(l, base_dir='R')
-                    if align == 'C':
-                        self.c.drawCentredString((col_left + col_right) / 2.0, text_y, shaped)
-                    elif align == 'L':
-                        self.c.drawString(col_left + padding, text_y, shaped)
-                    else:
-                        self.c.drawRightString(col_right - padding, text_y, shaped)
-                    text_y -= leading
-                    
-            self.y = bot_y
-        self.y -= 7
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
 
     def save(self):
-        self.draw_footer()
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_decorations(num_pages)
+            super(NumberedCanvas, self).showPage()
+        super(NumberedCanvas, self).save()
+
+    def draw_page_decorations(self, page_count):
+        width, height = A4
+        margin_x = 36
+        
+        # Header (Pages 2+)
+        if self._pageNumber > 1:
+            self.setFont("Vazir", 8.5)
+            self.setFillColor(C_GRAY_TEXT)
+            self.drawRightString(width - margin_x, height - 26, fa("راهنمای جامع تسلط بر پایان‌نامه و جلسه دفاع | دانشگاه بناب"))
+            self.drawString(margin_x, height - 26, fa("محمد امیر بابازاد — استاد راهنما: دکتر بابک آذرنوید"))
+            
+            self.setStrokeColor(C_CARD_BORDER)
+            self.setLineWidth(0.6)
+            self.line(margin_x, height - 32, width - margin_x, height - 32)
+            
+        # Footer (All pages)
+        self.setStrokeColor(C_CARD_BORDER)
+        self.setLineWidth(0.6)
+        self.line(margin_x, 34, width - margin_x, 34)
+        
+        self.setFont("Vazir", 8.5)
+        self.setFillColor(C_GRAY_TEXT)
+        self.drawRightString(width - margin_x, 20, fa("پایان‌نامه کارشناسی علوم کامپیوتر — حل معادله برگرز با شبکه آگاه از فیزیک (PINN) در JAX"))
+        page_str = fa(f"صفحه {self._pageNumber} از {page_count}")
+        self.drawString(margin_x, 20, page_str)
+
+# -------------------------------------------------------------
+# PDF Layout & Rendering Engine
+# -------------------------------------------------------------
+class GuideDoc:
+    def __init__(self, filename="MAB-THESIS/Defense_Guide.pdf"):
+        self.filename = filename
+        self.width, self.height = A4
+        self.margin_x = 36
+        self.margin_top = 45
+        self.margin_bottom = 45
+        self.content_width = self.width - 2 * self.margin_x
+        self.y = self.height - self.margin_top
+        self.c = NumberedCanvas(self.filename, pagesize=A4)
+
+    def check_space(self, required_height):
+        """If remaining vertical space is less than required, create a new page."""
+        if self.y - required_height < self.margin_bottom:
+            self.c.showPage()
+            self.y = self.height - self.margin_top
+
+    def new_page(self):
+        """Force a new page."""
+        self.c.showPage()
+        self.y = self.height - self.margin_top
+
+    def wrap_words_to_lines(self, text, font_name, font_size, max_w):
+        """Wrap text words so each line fits within max_w width."""
+        words = text.split()
+        if not words:
+            return []
+        lines = []
+        curr = [words[0]]
+        for w in words[1:]:
+            test_line = " ".join(curr + [w])
+            if pdfmetrics.stringWidth(test_line, font_name, font_size) <= max_w:
+                curr.append(w)
+            else:
+                lines.append(" ".join(curr))
+                curr = [w]
+        if curr:
+            lines.append(" ".join(curr))
+        return lines
+
+    def draw_text_block(self, text, font_name="Vazir", font_size=9.5, color=C_CHARCOAL,
+                        leading=14.5, max_w=None, align="right", indent=0):
+        if max_w is None:
+            max_w = self.content_width - indent
+        lines = self.wrap_words_to_lines(text, font_name, font_size, max_w)
+        for line in lines:
+            self.check_space(leading)
+            self.c.setFont(font_name, font_size)
+            self.c.setFillColor(color)
+            if align == "right":
+                x_pos = self.width - self.margin_x - indent
+                self.c.drawRightString(x_pos, self.y, fa(line))
+            elif align == "center":
+                x_pos = self.margin_x + (self.content_width / 2.0)
+                self.c.drawCentredString(x_pos, self.y, fa(line))
+            else:
+                x_pos = self.margin_x + indent
+                self.c.drawString(x_pos, self.y, fa(line))
+            self.y -= leading
+
+    def draw_banner(self, title, subtitle, meta_lines):
+        """Draw top banner on cover page."""
+        banner_h = 105
+        self.check_space(banner_h)
+        top_y = self.y
+        
+        # Outer Card
+        self.c.setFillColor(C_NAVY_DARK)
+        self.c.roundRect(self.margin_x, top_y - banner_h, self.content_width, banner_h, 6, fill=1, stroke=0)
+        
+        # Accent Strip
+        self.c.setFillColor(C_ACCENT_BLUE)
+        self.c.roundRect(self.margin_x, top_y - 8, self.content_width, 8, 3, fill=1, stroke=0)
+        
+        # Title text
+        self.c.setFont("Vazir-Bold", 15)
+        self.c.setFillColor(C_WHITE)
+        self.c.drawCentredString(self.width / 2.0, top_y - 32, fa(title))
+        
+        # Subtitle
+        self.c.setFont("Vazir", 10.5)
+        self.c.setFillColor(colors.HexColor("#CBD5E1"))
+        self.c.drawCentredString(self.width / 2.0, top_y - 52, fa(subtitle))
+        
+        # Meta Strip
+        meta_str = " | ".join(meta_lines)
+        self.c.setFont("Vazir", 9)
+        self.c.setFillColor(C_GOLD)
+        self.c.drawCentredString(self.width / 2.0, top_y - 74, fa(meta_str))
+        
+        tag_str = "راهنمای جامع تسلط و آمادگی کامل برای پاسخ به پرسش‌های هیئت داوران"
+        self.c.setFont("Vazir-Bold", 8.5)
+        self.c.setFillColor(colors.HexColor("#93C5FD"))
+        self.c.drawCentredString(self.width / 2.0, top_y - 92, fa(tag_str))
+        
+        self.y = top_y - banner_h - 14
+
+    def draw_section_header(self, num_str, title_str, color=C_NAVY_DARK):
+        """Draw modern section title bar."""
+        header_h = 28
+        self.check_space(header_h + 15)
+        top_y = self.y
+        
+        # Background bar
+        self.c.setFillColor(C_LIGHT_BG)
+        self.c.setStrokeColor(C_CARD_BORDER)
+        self.c.setLineWidth(1)
+        self.c.roundRect(self.margin_x, top_y - header_h, self.content_width, header_h, 4, fill=1, stroke=1)
+        
+        # Tag on right
+        tag_w = 6
+        self.c.setFillColor(color)
+        self.c.rect(self.width - self.margin_x - tag_w, top_y - header_h, tag_w, header_h, fill=1, stroke=0)
+        
+        # Section text
+        full_title = f"{num_str}. {title_str}"
+        self.c.setFont("Vazir-Bold", 12)
+        self.c.setFillColor(color)
+        self.c.drawRightString(self.width - self.margin_x - 14, top_y - 19, fa(full_title))
+        
+        self.y = top_y - header_h - 10
+
+    def draw_callout_box(self, title, text, bg_col=C_CALLOUT_BG, border_col=C_CALLOUT_BOR, title_col=C_NAVY_BLUE):
+        """Draw an elegant callout highlight box."""
+        pad_x = 12
+        pad_y = 10
+        inner_w = self.content_width - 2 * pad_x
+        
+        title_lines = self.wrap_words_to_lines(title, "Vazir-Bold", 10.5, inner_w) if title else []
+        body_lines = self.wrap_words_to_lines(text, "Vazir", 9.2, inner_w)
+        
+        box_h = pad_y * 2 + len(title_lines) * 16 + len(body_lines) * 14 + (6 if title else 0)
+        self.check_space(box_h + 8)
+        
+        top_y = self.y
+        self.c.setFillColor(bg_col)
+        self.c.setStrokeColor(border_col)
+        self.c.setLineWidth(1.2)
+        self.c.roundRect(self.margin_x, top_y - box_h, self.content_width, box_h, 5, fill=1, stroke=1)
+        
+        cur_y = top_y - pad_y - 10
+        if title:
+            for tl in title_lines:
+                self.c.setFont("Vazir-Bold", 10.5)
+                self.c.setFillColor(title_col)
+                self.c.drawRightString(self.width - self.margin_x - pad_x, cur_y, fa(tl))
+                cur_y -= 16
+            cur_y -= 4
+            
+        for bl in body_lines:
+            self.c.setFont("Vazir", 9.2)
+            self.c.setFillColor(C_CHARCOAL)
+            self.c.drawRightString(self.width - self.margin_x - pad_x, cur_y, fa(bl))
+            cur_y -= 14
+            
+        self.y = top_y - box_h - 10
+
+    def draw_bullet_item(self, bold_prefix, text_body, color=C_CHARCOAL):
+        """Draw a clean bullet point."""
+        full_text = f"• {bold_prefix} {text_body}"
+        self.draw_text_block(full_text, font_name="Vazir", font_size=9.2, color=color, leading=14.5, indent=8)
+        self.y -= 3
+
+    def draw_qa_item(self, q_num, question, answer, core_insight=None):
+        """Draw an ultra-clear, professional Q&A box."""
+        pad_x = 12
+        pad_y = 8
+        inner_w = self.content_width - 2 * pad_x
+        
+        q_full = f"پرسش {q_num}: {question}"
+        q_lines = self.wrap_words_to_lines(q_full, "Vazir-Bold", 10, inner_w - 10)
+        
+        ans_prefix = "پاسخ دفاعیه دانشجو: "
+        ans_lines = self.wrap_words_to_lines(ans_prefix + answer, "Vazir", 9, inner_w)
+        
+        ins_lines = self.wrap_words_to_lines(f"نکته کلیدی و برنده: {core_insight}", "Vazir-Bold", 8.5, inner_w) if core_insight else []
+        
+        q_header_h = len(q_lines) * 15 + 12
+        ans_body_h = len(ans_lines) * 13.5 + 14 + (len(ins_lines) * 13 + 8 if ins_lines else 0)
+        total_h = q_header_h + ans_body_h
+        
+        self.check_space(total_h + 8)
+        top_y = self.y
+        
+        # Outer Card
+        self.c.setFillColor(C_WHITE)
+        self.c.setStrokeColor(C_CARD_BORDER)
+        self.c.setLineWidth(1)
+        self.c.roundRect(self.margin_x, top_y - total_h, self.content_width, total_h, 4, fill=1, stroke=1)
+        
+        # Question Header Box
+        self.c.setFillColor(C_Q_BG)
+        self.c.setStrokeColor(C_Q_BORDER)
+        self.c.roundRect(self.margin_x, top_y - q_header_h, self.content_width, q_header_h, 4, fill=1, stroke=1)
+        
+        # Red Tag
+        self.c.setFillColor(C_CRIMSON)
+        self.c.rect(self.width - self.margin_x - 5, top_y - q_header_h, 5, q_header_h, fill=1, stroke=0)
+        
+        # Draw Question Lines
+        cur_y = top_y - 14
+        for ql in q_lines:
+            self.c.setFont("Vazir-Bold", 9.8)
+            self.c.setFillColor(C_CRIMSON)
+            self.c.drawRightString(self.width - self.margin_x - pad_x, cur_y, fa(ql))
+            cur_y -= 15
+            
+        # Draw Answer Lines
+        cur_y = top_y - q_header_h - 13
+        for idx, al in enumerate(ans_lines):
+            self.c.setFont("Vazir-Bold" if idx == 0 and "پاسخ دفاعیه" in al else "Vazir", 9)
+            self.c.setFillColor(C_NAVY_DARK if idx == 0 else C_CHARCOAL)
+            self.c.drawRightString(self.width - self.margin_x - pad_x, cur_y, fa(al))
+            cur_y -= 13.5
+            
+        if ins_lines:
+            cur_y -= 4
+            for inl in ins_lines:
+                self.c.setFont("Vazir-Bold", 8.5)
+                self.c.setFillColor(C_TEAL_DARK)
+                self.c.drawRightString(self.width - self.margin_x - pad_x, cur_y, fa(inl))
+                cur_y -= 13
+                
+        self.y = top_y - total_h - 8
+
+    def draw_table(self, title, headers, rows, col_widths, col_aligns=None):
+        """Draw a formatted table with multiline cell support."""
+        if col_aligns is None:
+            col_aligns = ["center"] * len(headers)
+            
+        header_h = 24
+        
+        # Pre-calculate row heights based on wrapped cell lines
+        row_heights = []
+        wrapped_rows = []
+        for r in rows:
+            max_lines = 1
+            wrapped_cells = []
+            for c_idx, val in enumerate(r):
+                w = col_widths[c_idx] - 12
+                lines = self.wrap_words_to_lines(str(val), "Vazir", 8.8, w)
+                wrapped_cells.append(lines if lines else [""])
+                if len(lines) > max_lines:
+                    max_lines = len(lines)
+            row_h = max(21, max_lines * 13 + 8)
+            row_heights.append(row_h)
+            wrapped_rows.append(wrapped_cells)
+            
+        total_h = header_h + sum(row_heights) + (20 if title else 0)
+        self.check_space(total_h + 10)
+        
+        top_y = self.y
+        if title:
+            self.c.setFont("Vazir-Bold", 10.5)
+            self.c.setFillColor(C_NAVY_DARK)
+            self.c.drawRightString(self.width - self.margin_x, top_y - 12, fa(title))
+            top_y -= 20
+            
+        # Draw Header
+        self.c.setFillColor(C_NAVY_DARK)
+        self.c.rect(self.margin_x, top_y - header_h, self.content_width, header_h, fill=1, stroke=0)
+        
+        cur_x = self.width - self.margin_x
+        for idx, (h, w) in enumerate(zip(headers, col_widths)):
+            self.c.setFont("Vazir-Bold", 9.5)
+            self.c.setFillColor(C_WHITE)
+            center_x = cur_x - (w / 2.0)
+            self.c.drawCentredString(center_x, top_y - 16, fa(h))
+            cur_x -= w
+            
+        # Draw Rows
+        cur_y = top_y - header_h
+        for r_idx, (wrapped_cells, row_h) in enumerate(zip(wrapped_rows, row_heights)):
+            bg = C_WHITE if r_idx % 2 == 0 else C_LIGHT_BG
+            self.c.setFillColor(bg)
+            self.c.rect(self.margin_x, cur_y - row_h, self.content_width, row_h, fill=1, stroke=0)
+            
+            # Row border
+            self.c.setStrokeColor(C_CARD_BORDER)
+            self.c.setLineWidth(0.6)
+            self.c.line(self.margin_x, cur_y - row_h, self.width - self.margin_x, cur_y - row_h)
+            
+            cur_x = self.width - self.margin_x
+            for c_idx, (lines, w) in enumerate(zip(wrapped_cells, col_widths)):
+                align = col_aligns[c_idx]
+                start_y = cur_y - (row_h / 2.0) + (len(lines) * 12.0 / 2.0) - 9
+                for l_idx, line in enumerate(lines):
+                    line_y = start_y - (l_idx * 12)
+                    self.c.setFont("Vazir", 8.8)
+                    self.c.setFillColor(C_CHARCOAL)
+                    if align == "center":
+                        self.c.drawCentredString(cur_x - (w / 2.0), line_y, fa(line))
+                    elif align == "right":
+                        self.c.drawRightString(cur_x - 6, line_y, fa(line))
+                    else:
+                        self.c.drawString(cur_x - w + 6, line_y, fa(line))
+                cur_x -= w
+            cur_y -= row_h
+            
+        # Outer table border
+        self.c.setStrokeColor(C_CARD_BORDER)
+        self.c.setLineWidth(1)
+        self.c.rect(self.margin_x, top_y - header_h - sum(row_heights), self.content_width, header_h + sum(row_heights), fill=0, stroke=1)
+        
+        self.y = top_y - header_h - sum(row_heights) - 10
+
+    def save(self):
+        self.c.showPage()
         self.c.save()
-        print(f"Generated comprehensive guide: {self.filename} ({self.page_num} pages)")
+        print(f"Comprehensive Defense Guide successfully built: {self.filename}")
 
-def generate():
-    doc = PersianDocBuilder("MAB-THESIS/Defense_Guide.pdf")
+# -------------------------------------------------------------
+# Main Generation Routine
+# -------------------------------------------------------------
+def build_guide():
+    doc = GuideDoc("MAB-THESIS/Defense_Guide.pdf")
     
-    # ------------------ SECTION 1: TITLE & BIG PICTURE ------------------
-    doc.add_title(
-        "راهنمای جامع تسلط بر پایان‌نامه و آمادگی برای جلسه دفاع",
-        "حل مسئله مستقیم معادله غیرخطی برگرز با استفاده از شبکه‌های عصبی آگاه از فیزیک (PINN)",
-        "پژوهشگر: محمد امیر بابازاد  |  استاد راهنما: دکتر بابک آذرنوید  |  دانشگاه بناب — شهریور ۱۴۰۵"
+    # ---------------------------------------------------------
+    # COVER BANNER
+    # ---------------------------------------------------------
+    doc.draw_banner(
+        title="راهنمای جامع تسلط بر پایان‌نامه و آمادگی کامل برای جلسه دفاع",
+        subtitle="حل مسئله مستقیم معادله غیرخطی برگرز با استفاده از شبکه‌های عصبی آگاه از فیزیک (PINN) در JAX",
+        meta_lines=[
+            "پژوهشگر: محمد امیر بابازاد",
+            "استاد راهنما: دکتر بابک آذرنوید",
+            "دانشگاه بناب — دانشکده علوم پایه",
+            "شهریور ۱۴۰۵"
+        ]
     )
-    
-    doc.add_callout(
-        "این راهنمای جامع و اختصاصی برای این تدوین شده است تا بدون نیاز به دانش عمیق پیشین در ریاضیات پیشرفته یا یادگیری عمیق، به تمام مفاهیم، فرمول‌ها، مراحل الگوریتمی آموزش در جکس، نتایج تجربی و منطق علمی پایان‌نامه خود تسلط ۱۰۰ درصدی پیدا کنید و با اعتمادبه‌نفس کامل در جلسه دفاع حاضر شده و نمره عالی کسب نمایید.",
-        title="پیام مهم به پژوهشگر (چگونه از این جزوه استفاده کنید؟)",
-        bg_color="#EFF6FF", border_color="#3B82F6", title_color="#1D4ED8"
+
+    # ---------------------------------------------------------
+    # SECTION 1: BIG PICTURE & CORE INTUITION
+    # ---------------------------------------------------------
+    doc.draw_callout_box(
+        title="پیام مهم به دانشجو: چگونه با این جزوه در جلسه دفاع بدرخشید؟",
+        text="این راهنمای اختصاصی با زبانی شفاف، عمیق و آکادمیک تدوین شده تا بدون نیاز به پیچیدگی‌های غیرضروری، بر تمام مبانی تئوری، کدهای جکس، نتایج تجربی و منطق علمی پایان‌نامه تسلط ۱۰۰ درصدی پیدا کنید. با مطالعه این فایل، به تمام پرسش‌های داوران با اعتمادبه‌نفس، استدلال محکم و تسلط پاسخ خواهید داد.",
+        bg_col=C_CALLOUT_BG,
+        border_col=C_CALLOUT_BOR,
+        title_col=C_NAVY_DARK
     )
 
-    doc.add_heading1("۱. تصویر کلان و منطق علمی پایان‌نامه به زبان ساده و ملموس")
-    
-    doc.add_heading2("هدف بنیادی پایان‌نامه چیست؟")
-    doc.add_paragraph("هدف ما محاسبه و پیش‌بینی سرعت یک سیال پیوسته (مانند هوا یا آب در لوله، یا سرعت خودروها در جریان ترافیک جاده‌ای) در سراسر فضا و زمان است. در فیزیک، تغییرات و اندرکنش این جریان‌ها با یک معادله دیفرانسیل جزئی غیرخطی بسیار معروف به نام «معادله برگرز» مدل‌سازی می‌شود.")
+    doc.draw_section_header("۱", "تصویر کلان و منطق علمی پایان‌نامه (به زبان ساده و ملموس)", C_NAVY_DARK)
 
-    doc.add_heading2("چرا روش‌های محاسباتی سنتی در حل این مسئله با چالش روبه‌رو می‌شوند؟")
-    doc.add_paragraph("روش‌های سنتی مهندسی نظیر تفاضل‌های محدود (FDM) و اجزای محدود (FEM) مجبورند کل فضا و زمان را به شبکه‌ای از نقاط (توری یا مش محاسباتی) تقسیم کنند. این کار سه ایراد اساسی دارد: ۱. در ابعاد بالا، تعداد خانه‌های شبکه منفجر شده و با پدیده نفرین ابعاد و هزینه محاسباتی فوق‌العاده سنگین روبه‌رو می‌شویم. ۲. روی هندسه‌های نامنظم، ساخت شبکه محاسباتی بسیار پیچیده و دشوار است. ۳. به دلیل تقریب گسسته مشتقات، همواره خطای برش عددی وجود دارد.")
+    doc.draw_bullet_item(
+        "هدف بنیادین این پایان‌نامه چیست؟",
+        "هدف ما محاسبه و پیش‌بینی رفتار میدان سرعت یک سیال پیوسته در طول فضا و زمان است. این پدیده با یک معادله دیفرانسیل جزئی غیرخطی بسیار معروف به نام «معادله برگرز» مدل‌سازی می‌شود که چالش اصلی آن، تشکیل جبهه تیز و ناگهانی موج شوک است."
+    )
 
-    doc.add_heading2("چرا هوش مصنوعی و یادگیری عمیق معمولی (صرفا داده‌محور) برای این کار کافی نیست؟")
-    doc.add_paragraph("شبکه‌های عصبی معمولی مانند جعبه سیاه عمل می‌کنند؛ یعنی نیازمند هزاران نقطه داده تجربی و آزمایشگاهی هستند تا رفتار سیستم را یاد بگیرند. اما در سامانه‌های واقعی فیزیکی و مهندسی (نظیر داخل موتور جت یا اعماق چاه‌های نفت)، نصب حسگر و ثبت داده پیوسته عملا غیرممکن است. اگر داده کم باشد، شبکه معمولی دچار بیش‌برازش شده و در نواحی بدون حسگر، پیش‌بینی‌های غیرمنطقی تولید می‌کند که قوانین پایه‌ای فیزیک (نظیر بقای جرم و انرژی) را نقض می‌نماید.")
+    doc.draw_bullet_item(
+        "چرا روش‌های محاسباتی سنتی در حل این مسئله با چالش روبرو می‌شوند؟",
+        "روش‌های کلاسیک مهندسی (نظیر تفاضل‌های محدود و اجزای محدود) مجبورند کل فضا و زمان را به شبکه‌ای از نقاط (مش) تقسیم کنند. این کار سه ایراد اساسی دارد: ۱. در ابعاد بالا با پدیده نفرین ابعاد و هزینه محاسباتی فوق‌العاده سنگین مواجه می‌شویم. ۲. روی هندسه‌های نامنظم، ساخت شبکه محاسباتی بسیار پیچیده است. ۳. تقریب‌های گسسته‌سازی مشتقات در جبهه‌های شوک خطای زیادی ایجاد می‌کنند."
+    )
 
-    doc.add_heading2("شاهکار این پایان‌نامه و ایده کلیدی شبکه آگاه از فیزیک (PINN) چیست؟")
-    doc.add_paragraph("ما به جای وابستگی به داده‌های انبوه آزمایشگاهی، خود «قانون فیزیک» (معادله دیفرانسیل برگرز) را وارد تابع هدف و مغز شبکه عصبی می‌کنیم. شبکه عصبی با استفاده از فناوری «مشتق‌گیری خودکار» در کتابخانه جکس، یاد می‌گیرد خروجی‌ای تولید کند که هم شرایط اولیه و مرزی محدود را برآورده کند و هم باقیمانده معادله فیزیک در کل دامنه فضا-زمان صفر شود. به این چارچوب یکپارچه، «شبکه عصبی آگاه از فیزیک» یا PINN می‌گویند.")
+    doc.draw_bullet_item(
+        "چرا هوش مصنوعی و یادگیری عمیق معمولی (صرفاً داده‌محور) کافی نیست؟",
+        "شبکه‌های عصبی استاندارد مثل جعبه سیاه عمل می‌کنند؛ یعنی نیازمند هزاران نقطه داده تجربی و آزمایشگاهی هستند. در مسائل فیزیکی، ثبت داده در همه نقاط پیوسته عملاً غیرممکن است. اگر داده کم باشد، شبکه معمولی دچار بیش‌برازش شده و پیش‌بینی‌هایی تولید می‌کند که قوانین بنیادین فیزیک (نظیر بقای جرم و انرژی) را نقض می‌نماید."
+    )
 
-    # ------------------ SECTION 2: CHAPTER BY CHAPTER BREAKDOWN ------------------
-    doc.add_heading1("۲. خلاصه و کالبدشکافی محتوای فصول پایان‌نامه (فصل به فصل)")
-    
-    doc.add_heading2("فصل اول: مقدمه و کلیات پژوهش (صفحات ۱۲ تا ۱۷)")
-    doc.add_bullet("طرح موضوع و بیان مسئله (بخش ۱-۱ و ۱-۲): تبیین ناکارآمدی روش‌های سنتی مبتنی بر شبکه محاسباتی و شکست مدل‌های داده‌محور در سناریوهای کم‌داده فیزیکی.", "محور اول:")
-    doc.add_bullet("تعریف مسئله مستقیم (Forward Problem): ساختار معادله و ضرایب فیزیکی (ضریب لزجت) کاملاً معلوم است و هدف محاسبه میدان پیوسته پاسخ u(t,x) در کل فضا-زمان است.", "محور دوم:")
-    doc.add_bullet("معادله برگرز و چالش جبهه شوک: توضیح چرایی انتخاب معادله برگرز به خاطر تشکیل پدیده موج شوک (افت ناگهانی سرعت در فاصله مکانی بسیار کوتاه) به عنوان مسئله معیار سنجش الگوریتم‌ها.", "محور سوم:")
-    doc.add_bullet("بستر نرم‌افزاری جکس (JAX): پیاده‌سازی مدل زمان‌پیوسته با تبدیل‌های تابعی مشتق‌گیری، بردارسازی خودکار، کامپایل در زمان اجرا و استراتژی بهینه‌سازی ترکیبی.", "محور چهارم:")
+    doc.draw_bullet_item(
+        "شاهکار این پایان‌نامه و ایده کلیدی شبکه آگاه از فیزیک (PINN) چیست؟",
+        "ما به جای وابستگی به داده‌های انبوه، خود «قانون فیزیک» (معادله دیفرانسیل برگرز) را وارد تابع هدف شبکه عصبی می‌کنیم. شبکه با استفاده از فناوری «مشتق‌گیری خودکار» در کتابخانه جکس، یاد می‌گیرد خروجی‌ای تولید کند که هم شرایط اولیه و مرزی را ارضا نماید و هم باقیمانده معادله فیزیک در سراسر دامنه فضا-زمان صفر شود."
+    )
 
-    doc.add_heading2("فصل دوم: مبانی نظری و پیشینه پژوهش (صفحات ۱۸ تا ۲۵)")
-    doc.add_bullet("معادلات دیفرانسیل جزئی (بخش ۲-۱): معرفی معادله گرما (پخشی خالص)، معادله برگرز (رقابت همرفت غیرخطی u*u_x و لزجت پخشی nu*u_xx) و معادله غیرخطی شرودینگر.", "معادلات فیزیکی:")
-    doc.add_bullet("روش‌های عددی کلاسیک (بخش ۲-۲): مقایسه ۳ روش اصلی در جدول ۲-۱ (تفاضل‌های محدود، اجزای محدود، روش‌های طیفی) و تبیین محدودیت‌های آن‌ها در ابعاد بالا و هندسه‌های نامنظم.", "روش‌های کلاسیک:")
-    doc.add_bullet("شبکه‌های عصبی مصنوعی (بخش ۲-۳): تشریح ساختار پرسپترون چندلایه (MLP)، مقایسه توابع فعال‌ساز (جدول ۲-۲) و اثبات ریاضی قضیه تقریب عمومی سیبنکو (Cybenko).", "ساختار شبکه:")
-    doc.add_bullet("آموزش شبکه‌های عمیق (بخش ۲-۴): تابع خطای MSE، گرادیان کاهشی و پس‌انتشار خطا، معرفی بهینه‌ساز آدام (Adam) با روابط گشتاور اول و دوم، بهینه‌ساز شبه‌نیوتنی L-BFGS و مقداردهی گزاویه (Xavier).", "بهینه‌سازی:")
-    doc.add_bullet("پیشینه تاریخی (بخش ۲-۵): سیر تحول از ایده لاگاریس در ۱۹۹۸ تا مدل‌های فرآیند گاوسی (۲۰۱۷)، روش SINDy برانتون و شاهکار مقاله ۲۰۱۹ رئیسی، پردیکاریس و کارنیاداکیس.", "سیر تحول علمی:")
+    # ---------------------------------------------------------
+    # SECTION 2: CHAPTER-BY-CHAPTER BREAKDOWN
+    # ---------------------------------------------------------
+    doc.draw_section_header("۲", "کالبدشکافی و خلاصه محتوای فصل‌های پایان‌نامه (فصل به فصل)", C_NAVY_BLUE)
 
-    doc.add_heading2("فصل سوم: شبکه‌های عصبی آگاه از فیزیک — روش پژوهش (صفحات ۲۶ تا ۳۶)")
-    doc.add_paragraph("این فصل مهم‌ترین بخش متدولوژی پایان‌نامه شماست و شامل محورهای زیر است:", bold=True, color='#003366')
-    doc.add_bullet("ایده محوری و صورت‌بندی کلی (بخش ۳-۱): تعریف عملگر باقیمانده فیزیک f = u_t + N[u] و تابع هزینه دوقلو، همراه با دیاگرام بلوکی شکل ۳-۱.", "صورت‌بندی مسئله:")
-    doc.add_bullet("مشتق‌گیری خودکار (بخش ۳-۲): مقایسه مشتق‌گیری نمادین (تورم جبری عبارات)، مشتق‌گیری عددی (تعارض خطای برش و گردکردن) و مشتق‌گیری خودکار. تشریح حساب اعداد دوگانه (Dual Numbers با خاصیت اپسیلون به توان دو مساوی صفر) و معرفی حالت مستقیم (JVP) و معکوس (VJP).", "مشتق‌گیری خودکار:")
-    doc.add_bullet("به‌کارگیری AD در معادله برگرز (بخش ۳-۳): تشریح ۵ گام تفصیلی ریاضی و الگوریتمی از تعریف نگاشت سرعت، استخراج تحلیلی مشتقات زمانی و مکانی با قاعده زنجیره‌ای، تشکیل باقیمانده جبری، ساختار دو سطحی AD و پیاده‌سازی تابعی در JAX.", "حل برگرز با AD:")
-    doc.add_bullet("مدل‌های زمانی (بخش ۳-۴ و ۳-۵): فرمول‌بندی مدل زمان‌پیوسته با ۲۰۰ نقطه مرزی و ۱۰۰۰۰ نقطه هم‌مکانی در برابر مدل زمان‌گسسته رانگه-کوتا ضمنی (IRK) با جدول بوچر (جدول ۳-۱).", "پیوسته و گسسته:")
-    doc.add_bullet("ملاحظات عملیاتی (بخش ۳-۶): توجیه انتخاب ۴ لایه پنهان، ۵۰ نورون، تابع فعال‌ساز Tanh، استراتژی بهینه‌سازی ترکیبی Adam و L-BFGS و نمونه‌برداری متمرکز در ناحیه شوک.", "نکات عملی:")
+    doc.draw_bullet_item(
+        "فصل اول (مقدمه و کلیات پژوهش):",
+        "طرح موضوع، تبیین ناکارآمدی روش‌های سنتی مبتنی بر شبکه، تعریف دقیق مسئله مستقیم، معرفی معادله برگرز و چالش جبهه شوک، بستر نرم‌افزاری جکس (JAX) و ساختار اهداف و نوآوری‌های پایان‌نامه."
+    )
 
-    doc.add_heading2("فصل چهارم: پیاده‌سازی و ارزیابی نتایج (صفحات ۳۷ تا ۴۳)")
-    doc.add_bullet("بستر محاسباتی (بخش ۴-۱): استفاده از پایتون ۳.۱۱ و کتابخانه JAX با دقت ممیز شناور ۶۴ بیتی (Float64) برای به صفر رساندن خطاهای گردکردن.", "بستر نرم‌افزاری:")
-    doc.add_bullet("روند آموزش در JAX (بخش ۴-۲): تشریح جامع خط لوله تبدیلات تابعی (grad, vmap, jit, value_and_grad)، مقداردهی گزاویه و استراتژی بهینه‌سازی دو مرحله‌ای.", "روند آموزش:")
-    doc.add_bullet("نتایج حل مستقیم برگرز (بخش ۴-۳): اجرای آموزش ترکیبی شامل ۶۰۰۰ گام Adam و سپس L-BFGS-B، کاهش خطای هزینه از مرتبه منفی ۳ به منفی ۵.", "فرآیند آموزش:")
-    doc.add_bullet("ارزیابی مقایسه‌ای با مقاله مرجع رئیسی ۲۰۱۹ (بخش ۴-۴): تحلیل جدول مقایسه تطبیقی (جدول ۴-۲) و نشان دادن بازتولید وفادارانه موقعیت و شیب تیز شوک.", "مقایسه با مرجع:")
+    doc.draw_bullet_item(
+        "فصل دوم (مبانی نظری و پیشینه پژوهش):",
+        "معرفی فیزیک حاکم بر معادله برگرز (رقابت همرفت غیرخطی و لزجت)، مقایسه ۳ روش کلاسیک عددی (تفاضل محدود، اجزای محدود، طیفی)، معماری شبکه پرسپترون چندلایه (MLP)، مقایسه توابع فعال‌ساز، قضیه تقریب عمومی چبنکو، روش‌های بهینه‌سازی آدام و ال-بی‌اف‌جی‌اس و سیر تاریخی تکامل روش‌های تلفیقی از ۱۹۹۸ تا شاهکار ۲۰۱۹ رئیسی."
+    )
 
-    doc.add_heading2("فصل پنجم: نتیجه‌گیری و پیشنهادها (صفحات ۴۴ تا ۴۶)")
-    doc.add_bullet("اثبات توانمندی PINN در حل بدون شبکه معادلات غیرخطی و به دام انداختن امواج شوک تنها با ۲۰۰ نقطه مرزی و قید فیزیک.", "یافته‌های کلیدی:")
-    doc.add_bullet("پیشنهادهای آتی: ۱. استفاده از توابع فعال‌ساز تطبیقی، ۲. به‌کارگیری شبکه‌های عصبی فوریه، ۳. وزن‌دهی پویا به بخش‌های تابع هزینه، ۴. توسعه به مدل‌های دو‌بعدی و سه‌بعدی ناویه-استوکس.", "کارهای آینده:")
+    doc.draw_bullet_item(
+        "فصل سوم (شبکه‌های عصبی آگاه از فیزیک — روش پژوهش):",
+        "ایده محوری و دیاگرام بلوکی، تابع هزینه دوگانه، مقایسه مشتق‌گیری خودکار با تفاضل محدود و مشتق نمادین، تشریح ۵ گام ریاضی استخراج مشتقات در جکس، ساختار دو سطحی مشتق‌گیری، مقایسه مدل زمان‌پیوسته با زمان‌گسسته رانگه--کوتا و دلایل انتخاب تابع تانژانت هیپربولیک و بهینه‌سازی ترکیبی."
+    )
 
-    # ------------------ SECTION 3: KEY NUMBERS & PARAMETERS ------------------
-    doc.add_heading1("۳. جدول جامع مشخصات، مقادیر عددی و نتایج تجربی پایان‌نامه")
-    doc.add_paragraph("این جدول حاوی تمامی مقادیر عددی و پارامترهایی است که باید دقیقاً در ذهن داشته باشید:", bold=True, color='#003366')
-    
-    table_data = [
-        ["معادله دیفرانسیل آزمون", "معادله غیرخطی برگرز با لزجت", "u_t + u u_x - nu u_xx = 0"],
-        ["ضریب لزجت سینماتیکی (nu)", "0.01 / pi (حدود 0.003183)", "هر چه کوچکتر باشد شوک تیزتر و حل سخت‌تر است"],
-        ["دامنه حل فضا-زمان", "بازه مکانی ۱- تا ۱+ و زمانی ۰ تا ۱", "دامنه پیوسته دوبعدی بدون شبکه‌بندی گسسته"],
-        ["شرط اولیه و مرزی", "شرط اولیه سینوسی و مرزهای همگن دیریکله", "u(0,x) = -sin(pi x) | u(t,-1) = u(t,1) = 0"],
-        ["داده‌های مرزی و اولیه (N_u)", "۲۰۰ نقطه (۱۰۰ مرزی + ۱۰۰ اولیه)", "تنها داده‌های برچسب‌دار معلوم در کل مسئله"],
-        ["نقاط هم‌مکانی باقیمانده (N_f)", "۱۰۰۰۰ نقطه درون دامنه فضا-زمان", "نمونه‌برداری متمرکز در حوالی خط شوک x=0"],
-        ["معماری شبکه عصبی", "۴ لایه پنهان، ۵۰ نورون در هر لایه", "تابع فعال‌ساز تانژانت هیپربولیک (Tanh)"],
-        ["تعداد کل پارامترها", "۷۸۵۱ پارامتر وزن و بایاس", "مقداردهی اولیه با روش یکنواخت گزاویه"],
-        ["استراتژی آموزش مدل", "ترکیبی دو مرحله‌ای: Adam + L-BFGS", "۶۰۰۰ گام آدام (نرخ 0.001) سپس همگرایی L-BFGS"],
-        ["دقت ممیز شناور ماشین", "۶۴ بیتی (Float64)", "جهت حفظ بالاترین دقت و حذف خطای گردکردن"],
-        ["خطای نسبی نهایی در نرم L2", "2.15e-2 (معادل ۲.۱۵ درصد)", "میزان انحراف شبکه از میدان پاسخ معیار"],
-        ["خطای باقیمانده فیزیک", "MSE_f = 6.36e-5", "نشان‌دهنده ارضای فوق‌العاده قوی قانون فیزیک"],
-        ["خطای داده‌های مرزی", "MSE_u = 2.35e-5", "انطباق عالی خروجی شبکه با شرایط مرزی و اولیه"],
-        ["مقایسه با Raissi 2019", "هم‌خوانی کیفی عالی در بازتولید گرادیان", "بازتولید موفقیت‌آمیز جبهه شوک مقاله مرجع"]
+    doc.draw_bullet_item(
+        "فصل چهارم (پیاده‌سازی و ارزیابی تجربی نتایج):",
+        "پیکربندی بستر جکس و دقت ممیز شناور ۶۴ بیتی، خط لوله تبدیلات تابعی (grad, vmap, jit)، نتایج حل مستقیم معادله برگرز، تحلیل تاریخچه همگرایی توابع هزینه، بازسازی جبهه شوک در مقاطع زمانی مختلف، نقشه دوبعدی خطا و ارزیابی تطبیقی با مقاله مرجع رئیسی و همکاران (۲۰۱۹)."
+    )
+
+    doc.draw_bullet_item(
+        "فصل پنجم (نتیجه‌گیری و پیشنهادها):",
+        "جمع‌بندی دستاوردهای علمی در حل بدون شبکه معادلات غیرخطی و ارائه ۴ افق توسعه آتی (توابع فعال‌ساز تطبیقی، شبکه‌های ویژگی فوریه، تفکیک دامنه و تعمیم به معادلات دوبعدی و سه‌بعدی ناویه--استوکس)."
+    )
+
+    # ---------------------------------------------------------
+    # SECTION 3: NUMERICAL FACTSHEET TABLE
+    # ---------------------------------------------------------
+    doc.draw_section_header("۳", "شناسنامه محاسباتی، مقادیر عددی و نتایج تجربی پایان‌نامه", C_TEAL_DARK)
+
+    doc.draw_callout_box(
+        title="اعداد و پارامترهای طلایی که باید در جلسه دفاع حفظ باشید:",
+        text="این جدول کل مقادیر تجربی و پارامترهای پیاده‌سازی‌شده در کد پایان‌نامه را خلاصه می‌کند. داوران معمولاً این اعداد را می‌پرسند تا از تسلط عملی شما بر اجرای آزمایش‌ها مطمئن شوند.",
+        bg_col=C_LIGHT_BG,
+        border_col=C_CARD_BORDER,
+        title_col=C_NAVY_DARK
+    )
+
+    headers = ["شاخص محاسباتی", "مقدار در این پژوهش", "توضیح مفهومی و کاربرد"]
+    col_w = [140, 160, 220]
+    rows = [
+        ["معادله دیفرانسیل آزمون", "معادله غیرخطی برگرز با لزجت", "توصیف رقابت همرفت غیرخطی و پخش لزجت"],
+        ["ضریب لزجت سینماتیکی", "۰٫۰۱ تقسیم بر پی (حدود ۰٫۰۰۳۱۸)", "هرچه کمتر باشد جبهه شوک تیزتر و حل سخت‌تر است"],
+        ["دامنه فضا و زمان", "مکان از ۱- تا ۱+ و زمان از ۰ تا ۱", "دامنه دوبعدی پیوسته فضا-زمان بدون شبکه‌بندی"],
+        ["شرط اولیه و مرزها", "سینوسی با مرزهای همگن دیریکله", "مقدار اولیه منفی سینوس پی ایکس و صفر در مرزها"],
+        ["داده‌های مرزی و اولیه", "۲۰۰ نقطه (۱۰۰ مرزی + ۱۰۰ اولیه)", "تنها داده‌های برچسب‌دار معلوم در کل مسئله"],
+        ["نقاط هم‌مکانی باقیمانده", "۱۰۰۰۰ نقطه درون فضا-زمان", "۵۰٪ تصادفی یکنواخت + ۵۰٪ متمرکز در شوک"],
+        ["معماری شبکه عصبی", "۴ لایه پنهان، ۵۰ نورون در هر لایه", "پرسپترون چندلایه با تابع فعال‌ساز Tanh"],
+        ["تعداد کل پارامترها", "۷۸۵۱ پارامتر وزن و بایاس", "مقداردهی اولیه وزن‌ها با توزیع یکنواخت گزاویه"],
+        ["استراتژی آموزش مدل", "ترکیبی: آدام و سپس ال-بی‌اف‌جی‌اس", "۶۰۰۰ گام آدام و سپس L-BFGS تا همگرایی"],
+        ["دقت ممیز شناور", "۶۴ بیتی (Float64)", "حذف خطاهای گردکردن در تقریب شیب‌های تند"],
+        ["خطای نسبی در نرم L2", "۲٫۱۵ درصد", "میزان انحراف میدان پیش‌بینی از میدان مرجع"],
+        ["خطای باقیمانده فیزیک", "۶٫۳۶ در ۱۰ به توان ۵-", "نشان‌دهنده ارضای فوق‌العاده قوی قانون فیزیک"],
+        ["خطای داده‌های مرزی", "۲٫۳۵ در ۱۰ به توان ۵-", "انطباق عالی خروجی شبکه با شرایط مرزی و اولیه"],
     ]
-    doc.add_table(table_data, [130, 185, 204], headers=["شاخص و پارامتر", "مقدار در این پژوهش", "توضیح مفهومی"], bg_header="#003366", col_aligns=['R', 'C', 'R'])
+    doc.draw_table("", headers, rows, col_w, ["center", "center", "right"])
 
-    # ------------------ SECTION 4: FIGURE INTERPRETATION & JAX PIPELINE ------------------
-    doc.add_heading1("۴. تشریح دقیق نمودارهای فصل ۴ و مکانیزم ۵ مرحله‌ای آموزش با JAX")
-    
-    doc.add_heading2("تحلیل مفهومی شکل‌ها و نمودارهای فصل ۴:")
-    doc.add_bullet("شکل ۴-۱ (توزیع نقاط آموزش): این شکل نشان می‌دهد که چگونه ۲۰۰ نقطه با رنگ قرمز روی مرزهای مکانی و لحظه آغازین قرار گرفته‌اند و ۱۰۰۰۰ نقطه خاکستری در سراسر صفحه فضا-زمان پخش شده‌اند. تراکم بالاتر نقاط در خط مرکزی x=0 نشان‌دهنده راهبرد نمونه‌برداری متمرکز در ناحیه تشکیل شوک است.", "شکل ۴-۱:")
-    doc.add_bullet("شکل ۴-۲ (تاریخچه همگرایی توابع هزینه): این نمودار لگاریتمی نشان می‌دهد که در فاز اول (بهینه‌ساز Adam)، خطای کل با شیب مناسب افت می‌کند و پس از گام ۶۰۰۰ با ورود بهینه‌ساز شبه‌نیوتنی L-BFGS، خطا دچار یک ریزش شارپ شده و به دقت ۱۰ به توان منفی ۵ می‌رسد.", "شکل ۴-۲:")
-    doc.add_bullet("شکل ۴-۳ (مقاطع زمانی پاسخ در زمان‌های t=0.25, 0.50, 0.75): این نمودار قلب نتایج شماست! خطوط ممتد مشکی جواب معیار و خطوط خط‌چین قرمز پیش‌بینی PINN هستند. مشاهده می‌کنید که موج سینوسی هموار اولیه با گذر زمان به سمت مرکز متمایل شده و در حوالی x=0 یک افت عمودی و دیوارمانند (جبهه شوک) ایجاد می‌کند و مدل با دقت عالی آن را بازسازی کرده است.", "شکل ۴-۳:")
-    doc.add_bullet("شکل ۴-۴ (نقشه خطای دوبعدی): نمودار کانتور رنگی نشان می‌دهد که در بیش از ۹۵ درصد مساحت دامنه فضا-زمان، خطا به رنگ تیره (نزدیک به صفر) است و بیشینه خطای اندک مدل فقط در امتداد نوار بسیار باریک خط شوک (برای زمان‌های بعد از 0.3) متمرکز است.", "شکل ۴-۴:")
+    # ---------------------------------------------------------
+    # SECTION 4: EXPLANATION OF FIGURES & CHARTS
+    # ---------------------------------------------------------
+    doc.draw_section_header("۴", "تحلیل دقیق نمودارها و شکل‌های فصل چهارم پایان‌نامه", C_NAVY_DARK)
 
-    doc.add_heading2("روند الگوریتمی ۵ مرحله‌ای اجرای مدل در کتابخانه جکس (JAX):")
-    doc.add_bullet("گام اول (مقداردهی اولیه پارامترها): وزن‌های شبکه با توزیع یکنواخت گزاویه (گلوروت) بر اساس تعداد نورون‌های ورودی و خروجی مقداردهی شده و بایاس‌ها با صفر آغاز می‌شوند تا پایداری گرادیان‌ها حفظ شود.", "گام اول:")
-    doc.add_bullet("گام دوم (تبدیلات تابعی و مشتق‌گیری): تابع پیش‌بینی u_net تعریف شده و مشتقات زمانی و مکانی u_t, u_x, u_xx با استفاده از تبدیل تابعی jax.grad به‌صورت تحلیلی و تودرتو استخراج می‌گردند.", "گام دوم:")
-    doc.add_bullet("گام سوم (بردارسازی و کامپایل JIT): با استفاده از jax.vmap ارزیابی نقاط به صورت دسته‌ای و برداری درمی‌آید و با jax.jit کل گراف محاسباتی با کامپایلر XLA به کد ماشین بهینه تبدیل می‌شود.", "گام سوم:")
-    doc.add_bullet("گام چهارم (محاسبه هم‌زمان تابع هزینه و گرادیان): با استفاده از jax.value_and_grad، مقدار تابع هزینه ترکیبی (MSE_u + MSE_f) و بردار گرادیان آن نسبت به پارامترهای شبکه در یک گذر مشترک و سریع به دست می‌آید.", "گام چهارم:")
-    doc.add_bullet("گام پنجم (استراتژی بهینه‌سازی دو مرحله‌ای): ابتدا ۶۰۰۰ تکرار با بهینه‌ساز Adam برای فرار از کمینه‌های محلی اجرا شده و سپس آموزش با روش شبه‌نیوتنی L-BFGS-B تا رسیدن به همگرایی عمیق ادامه می‌یابد.", "گام پنجم:")
+    doc.draw_bullet_item(
+        "شکل ۱-۴ (توزیع نقاط آموزش در دامنه فضا-زمان):",
+        "این شکل نشان می‌دهد چگونه ۲۰۰ نقطه قرمز رنگ روی مرزهای مکانی و لحظه آغازین قرار گرفته‌اند و ۱۰۰۰۰ نقطه خاکستری در سراسر دامنه پخش شده‌اند. تراکم بالاتر نقاط در خط مرکزی x=0 نشان‌دهنده راهبرد نمونه‌برداری متمرکز در ناحیه تشکیل موج شوک است."
+    )
 
-    # ------------------ SECTION 5: GLOSSARY OF KEY TERMS ------------------
-    doc.add_heading1("۵. فرهنگ لغت اصطلاحات کلیدی و تخصصی پایان‌نامه")
-    
-    terms_data = [
-        ["معادله برگرز (Burgers Eq)", "یک PDE غیرخطی بنیادین که رقابت دو اثر همرفت (انتقال غیرخطی) و لزجت (پخش اصطکاکی) را توصیف می‌کند."],
-        ["موج شوک (Shock Wave)", "ناحیه بسیار فشرده‌ای که مشخصات جریان (مثل سرعت) در فاصله مکانی فوق‌العاده کوتاهی دچار افت یا جهش شدید می‌شود."],
-        ["مسئله مستقیم (Forward Problem)", "مسئله‌ای که ساختار معادله و شرایط مرزی-اولیه معلوم است و هدف محاسبه میدان پاسخ زمانی-مکانی u(t,x) است."],
-        ["مشتق‌گیری خودکار (AutoDiff / AD)", "تکنیک ارزیابی دقیق مشتقات برنامه‌های کامپیوتری با اعمال قاعده زنجیره‌ای روی گراف محاسباتی با دقت اعشار ماشین."],
-        ["نقاط هم‌مکانی (Collocation Points)", "نقاطی در درون دامنه که داده سنسوری نداریم، اما معادله فیزیک در آن‌ها ارزیابی و باقیمانده آن صفر می‌شود."],
-        ["کامپایل در زمان اجرا (JIT / XLA)", "فناوری کامپایل توابع پایتون به کدهای بهینه‌سازی‌شده ماشین که سرعت محاسبات را تا چندین برابر افزایش می‌دهد."],
-        ["بهینه‌ساز شبه‌نیوتنی L-BFGS", "یک الگوریتم بهینه‌سازی مرتبه دوم که با تقریب ماتریس معکوس هشین، همگرایی فوق‌خطی و دقت بسیار بالایی ایجاد می‌کند."],
-        ["بردارسازی خودکار (VMAP)", "قابلیت کتابخانه JAX برای اجرای موازی و برداری توابع روی دسته‌های بزرگ داده بدون نیاز به حلقه‌های کند پایتون."]
+    doc.draw_bullet_item(
+        "شکل ۲-۴ (تاریخچه همگرایی توابع هزینه در مقیاس لگاریتمی):",
+        "این نمودار نشان می‌دهد که در فاز اول (بهینه‌ساز آدام)، خطای کل با شیب مناسب افت می‌کند و پس از گام ۶۰۰۰ با ورود بهینه‌ساز شبه‌نیوتنی L-BFGS، خطا دچار یک ریزش شارپ شده و به دقت ۱۰ به توان منفی ۵ می‌رسد."
+    )
+
+    doc.draw_bullet_item(
+        "شکل ۳-۴ (مقاطع زمانی پاسخ در لحظات t=0.25, 0.50, 0.75):",
+        "این نمودار قلب نتایج تجربی پایان‌نامه است. خطوط ممتد مشکی جواب مرجع و خط‌چین قرمز پیش‌بینی PINN هستند. مشاهده می‌شود که موج سینوسی هموار اولیه با گذر زمان به سمت مرکز متمایل شده و در حوالی x=0 یک افت عمودی و دیوارمانند (جبهه شوک) ایجاد می‌کند و مدل با دقت عالی آن را بازسازی کرده است."
+    )
+
+    doc.draw_bullet_item(
+        "شکل ۴-۴ (نقشه کانتور دوبعدی قدرمطلق خطا):",
+        "نمودار کانتور رنگی نشان می‌دهد که در بیش از ۹۵ درصد مساحت دامنه، خطا بسیار ناچیز و نزدیک به صفر است و بیشینه خطای اندک مدل فقط در امتداد نوار بسیار باریک خط شوک (برای زمان‌های بعد از ۰٫۳) متمرکز شده است."
+    )
+
+    # ---------------------------------------------------------
+    # SECTION 5: JAX EXECUTION PIPELINE
+    # ---------------------------------------------------------
+    doc.draw_section_header("۵", "خط لوله ۵ مرحله‌ای اجرای مدل در کتابخانه جکس (JAX)", C_TEAL_DARK)
+
+    doc.draw_bullet_item(
+        "گام اول (مقداردهی اولیه پارامترها):",
+        "وزن‌های شبکه با توزیع یکنواخت گزاویه (بر اساس تعداد نورون‌های ورودی و خروجی) و بایاس‌ها با صفر آغاز می‌شوند تا پایداری واریانس گرادیان‌ها حفظ شود."
+    )
+
+    doc.draw_bullet_item(
+        "گام دوم (تبدیلات تابعی و مشتق‌گیری خودکار):",
+        "تابع پیش‌بینی شبکه تعریف شده و مشتقات زمانی و مکانی با استفاده از تبدیل تابعی jax.grad به صورت تحلیلی و تودرتو استخراج می‌گردند."
+    )
+
+    doc.draw_bullet_item(
+        "گام سوم (بردارسازی و کامپایل JIT):",
+        "با استفاده از jax.vmap ارزیابی نقاط به صورت دسته‌ای و برداری درمی‌آید و با jax.jit کل گراف محاسباتی با کامپایلر XLA به کد ماشین بهینه تبدیل می‌شود."
+    )
+
+    doc.draw_bullet_item(
+        "گام چهارم (محاسبه همزمان تابع هزینه و گرادیان):",
+        "با استفاده از jax.value_and_grad، مقدار تابع هزینه ترکیبی و بردار گرادیان آن نسبت به پارامترهای شبکه در یک گذر مشترک و سریع به دست می‌آید."
+    )
+
+    doc.draw_bullet_item(
+        "گام پنجم (استراتژی بهینه‌سازی دو مرحله‌ای):",
+        "ابتدا ۶۰۰۰ تکرار با بهینه‌ساز آدام برای فرار از کمینه‌های محلی اجرا شده و سپس آموزش با روش شبه‌نیوتنی L-BFGS-B تا رسیدن به همگرایی عمیق ادامه می‌یابد."
+    )
+
+    # ---------------------------------------------------------
+    # SECTION 6: GOLDEN DEFENSE Q&A BANK (18 High-Yield Questions)
+    # ---------------------------------------------------------
+    doc.draw_section_header("۶", "بانک طلایی ۱۸ پرسش کلیدی داوران و پاسخ‌های مسلط و دفاع‌محور", C_CRIMSON)
+
+    doc.draw_callout_box(
+        title="راهنمای تسلط بر جلسه دفاع:",
+        text="این ۱۸ پرسش پرتکرارترین، تخصصی‌ترین و چالش‌برانگیزترین سوالاتی هستند که اساتید راهنما و داوران در جلسات دفاع مطرح می‌کنند. تسلط بر این پاسخ‌ها تضمین‌کننده نمره کامل و آرامش روانی شماست.",
+        bg_col=C_Q_BG,
+        border_col=C_Q_BORDER,
+        title_col=C_CRIMSON
+    )
+
+    qa_list = [
+        (
+            "۱",
+            "تفاوت بنیادین مشتق‌گیری خودکار (AutoDiff) با مشتق‌گیری عددی و نمادین چیست؟",
+            "مشتق‌گیری عددی (تفاضل محدود) دچار تعارض دو خطاست: خطای برش در طول گام بزرگ و خطای گردکردن در طول گام کوچک. مشتق‌گیری نمادین هم با پدیده تورم نمایی عبارات جبری مواجه است. در مقابل، مشتق‌گیری خودکار با ساخت گراف محاسباتی کد پایتون و اعمال دقیق قاعده زنجیره‌ای، مشتقات جزئی را با دقت تحلیلی تا حد دقت ممیز شناور ماشین بدون هیچ خطای برشی ارزیابی می‌کند.",
+            "مشتق‌گیری خودکار نه نمادین است و نه عددی، بلکه اعمال سیستماتیک قاعده زنجیره‌ای روی کدهای اجرایی برنامه است."
+        ),
+        (
+            "۲",
+            "چرا در معماری شبکه عصبی از تابع فعال‌ساز Tanh استفاده کردید و چرا ReLU کارایی ندارد؟",
+            "معادله برگرز نیازمند مشتق دوم مکانی برای مدل‌سازی لزجت است. تابع ReLU یک تابع تکه‌ای خطی است که مشتق اول آن پله‌ای و مشتق دوم آن در همه نقاط صفر است. بنابراین با ReLU، ترم لزجت معادله کاملاً پوچ می‌شود. در مقابل، تانژانت هیپربولیک (Tanh) یک تابع هموار و بی‌نهایت بار مشتق‌پذیر است و مشتقات اول و دوم تحلیلی غیرصفر و منظم تولید می‌کند.",
+            "مشتق دوم ReLU صفر است؛ لذا استفاده از ReLU در حل معادلات دیفرانسیل مرتبه دو از نظر ریاضی غیرممکن است."
+        ),
+        (
+            "۳",
+            "ساختار دو سطحی مشتق‌گیری خودکار که در فصل ۳ تشریح شده است دقیقاً یعنی چه؟",
+            "در PINN دو سطح متمایز مشتق‌گیری داریم: سطح اول (مشتق داخلی) مشتق‌گیری از خروجی شبکه نسبت به ورودی‌های فیزیکی فضا-زمان (t, x) برای تشکیل عملگر باقیمانده فیزیک است. سطح دوم (مشتق خارجی) مشتق‌گیری از تابع هزینه کل نسبت به پارامترهای وزن و بایاس شبکه برای پس‌انتشار خطا و آموزش مدل است.",
+            "سطح اول قوانین فیزیک را می‌سازد و سطح دوم وزن‌های شبکه عصبی را به‌روزرسانی می‌کند."
+        ),
+        (
+            "۴",
+            "چرا فرآیند آموزش را به صورت دو مرحله‌ای (ابتدا Adam و سپس L-BFGS) طراحی کردید؟",
+            "توابع هزینه در شبکه‌های آگاه از فیزیک غیرمحدب و دارای کمینه‌های محلی فراوان هستند. بهینه‌ساز آدام با بهره‌گیری از گشتاور اول و دوم، در مراحل اولیه برای فرار از کمینه‌های محلی و کاهش سریع خطا بسیار توانمند است. اما در نزدیکی نقطه بهینه سرعت آن کند می‌شود. بهینه‌ساز شبه‌نیوتنی L-BFGS با تقریب ماتریس معکوس هشین، سرعت همگرایی فوق‌خطی و مرتبه دو دارد و دقت نهایی را رقم می‌زند.",
+            "آدام مدل را به حوضچه همگرایی می‌رساند و ال-بی‌اف‌جی‌اس ریزش شارپ نهایی به سمت صفر را ایجاد می‌کند."
+        ),
+        (
+            "۵",
+            "نقاط هم‌مکانی (Collocation Points) چیستند و چرا چگالی آن‌ها در حوالی x=0 بیشتر بود؟",
+            "نقاط هم‌مکانی نقاطی درون دامنه پیوسته فضا-زمان هستند که هیچ داده اندازه‌گیری تجربی برای آن‌ها نداریم، اما باقیمانده معادله فیزیک در آن‌ها محاسبه و صفر می‌شود. در معادله برگرز پدیده موج شوک و گرادیان‌های شدید در حوالی خط مرکزی x=0 رخ می‌دهد. اختصاص ۵۰٪ نقاط به این ناحیه باعث شد شبکه رزولوشن بالاتری برای یادگیری جبهه تیز شوک داشته باشد.",
+            "نمونه‌برداری متمرکز در ناحیه شوک باعث به دام انداختن ناپیوستگی بدون افزایش بیهوده کل نقاط محاسباتی می‌شود."
+        ),
+        (
+            "۶",
+            "چرا کتابخانه جکس (JAX) را به جای PyTorch یا TensorFlow انتخاب کردید؟",
+            "جکس مبتنی بر پارادایم برنامه‌نویسی تابعی محض طراحی شده و تبدیلات تابعی فوق‌العاده‌ای نظیر grad برای مشتق‌گیری مراتب بالا، vmap برای بردارسازی موازی و jit برای کامپایل بهینه با موتور XLA ارائه می‌دهد. این ویژگی‌ها سرعت محاسباتی بسیار بالا، کدنویسی تمیز و سازگاری کامل با دقت ۶۴ بیتی را فراهم می‌کنند.",
+            "ترکیب grad و vmap و jit در جکس، ایده‌آل‌ترین خط لوله برای حل معادلات دیفرانسیل بدون حلقه‌های کند پایتون است."
+        ),
+        (
+            "۷",
+            "چرا در این پژوهش صرفاً بر مسئله مستقیم تمرکز کردید و مسئله معکوس بررسی نشد؟",
+            "با راهنمایی استاد محترم راهنما (جناب آقای دکتر آذرنوید)، برای حفظ تمرکز عمیق پژوهش بر روی چالش‌های محاسباتی بازسازی جبهه‌های نوک‌تیز موج شوک و تحلیل توزیع مکانی-زمانی خطا و مقایسه جامع با مقاله مرجع معتبر رئیسی و همکاران (۲۰۱۹)، دامنه این پایان‌نامه به صورت تخصصی بر حل مسئله مستقیم معطوف گردید.",
+            "تمرکز بر مسئله مستقیم امکان تحلیل عمیق‌تر پایداری الگوریتم و رفتار مکانی-زمانی خطا در جبهه شوک را فراهم آورد."
+        ),
+        (
+            "۸",
+            "نقش ضریب لزجت (nu) در رفتار معادله برگرز چیست و اگر مقدار آن کمتر شود چه اتفاقی می‌افتد؟",
+            "ضریب لزجت بیانگر شدت پخش و اصطکاک سیال است که تمایل به هموارسازی امواج دارد. در مقابل، جمله غیرخطی تمایل به جلو کشیدن موج و ایجاد ناپیوستگی دارد. هرچه لزجت کمتر باشد، جبهه شوک نوک‌تیزتر، شیب‌دارتر و باریک‌تر می‌شود و چالش تقریب شبکه عصبی به شدت افزایش می‌یابد.",
+            "ضریب لزجت کوچک یعنی غلبه همرفت غیرخطی بر پخش، که منجر به پیدایش موج شوک شبه‌ناپیوسته می‌شود."
+        ),
+        (
+            "۹",
+            "آیا شبکه عصبی PINN دچار بیش‌برازش (Overfitting) نمی‌شود؟ چرا از Dropout استفاده نکردید؟",
+            "خیر؛ در شبکه‌های آگاه از فیزیک، وجود جمله باقیمانده فیزیک کل فضای فرضیات شبکه را به توابعی محدود می‌کند که قوانین دیفرانسیل حاکم را ارضا کنند. این قید فیزیکی در حقیقت نقش یک منظم‌ساز ساختاری فوق‌العاده قدرتمند را ایفا می‌کند که مانع از بیش‌برازش می‌شود؛ لذا نیازی به تکنیک‌های تجربی مثل لایه‌های دراپ‌اوت وجود ندارد.",
+            "قانون فیزیک قدرتمندترین منظم‌ساز ریاضی است و شبکه را در تمام دامنه مهار می‌کند."
+        ),
+        (
+            "۱۰",
+            "خطای ۲٫۱۵ درصدی به دست آمده در مقایسه با مقاله مرجع رئیسی (۲۰۱۹) چگونه ارزیابی می‌شود؟",
+            "در مقاله مرجع رئیسی از شبکه‌ای عمیق‌تر (۸ لایه پنهان) با ده‌ها هزار تکرار L-BFGS بر روی کارت‌های گرافیکی تخصصی سرور استفاده شده است. در پژوهش حاضر با معماری ۴ لایه و بهینه‌سازی متعادل روی پردازنده مرکزی معمولی، به خطای ۲٫۱۵ درصد رسیدیم که از نظر کیفی موقعیت و شیب تیز شوک را در تمام مقاطع زمانی با وفاداری کامل بازتولید کرده است.",
+            "تطابق ساختاری پروفیل شوک در سه مقطع زمانی نشان‌دهنده موفقیت کیفی و کمی مدل در چارچوب سخت‌افزار استاندارد است."
+        ),
+        (
+            "۱۱",
+            "تفاوت مدل زمان‌پیوسته و زمان‌گسسته چیست و چرا مدل زمان‌پیوسته را پیاده‌سازی کردید؟",
+            "در مدل زمان‌پیوسته، فضا و زمان به صورت متغیرهای پیوسته همزمان به شبکه داده می‌شوند و میدان در کل دامنه ارزیابی می‌شود. در مدل زمان‌گسسته، از روش‌های رانگه--کوتا ضمنی برای گام‌زنی زمانی استفاده می‌شود. مدل زمان‌پیوسته به دلیل ساختار یکپارچه، سادگی محاسباتی و توانایی ارزیابی میدان در هر لحظه دلخواه، رویکرد اصلی این پژوهش بوده است.",
+            "مدل زمان‌پیوسته نیازی به گام‌بندی گسسته زمانی ندارد و حل پیوسته در تمام فضا-زمان ارائه می‌دهد."
+        ),
+        (
+            "۱۲",
+            "آیا این چارچوب برای معادلات دوبعدی، سه‌بعدی و هندسه‌های نامنظم هم کاربرد دارد؟",
+            "بله؛ بزرگ‌ترین مزیت PINN بدون شبکه بودن (Mesh-Free) آن است. در ابعاد بالاتر کافی است بردار ورودی شبکه به ابعاد بالاتر گسترش یابد و نقاط هم‌مکانی درون هندسه نامنظم نمونه‌برداری شوند، بدون اینکه نیازی به تولید توری یا المان‌بندی‌های پیچیده مهندسی باشد.",
+            "چارچوب PINN هندسه‌ناپذیر و مستقل از شبکه است و به راحتی به ابعاد بالاتر تعمیم می‌یابد."
+        ),
+        (
+            "۱۳",
+            "چرا مقداردهی اولیه وزن‌ها با روش گزاویه (Glorot) انجام شد؟",
+            "مقداردهی گزاویه واریانس خروجی هر لایه را با واریانس ورودی آن برابر نگه می‌دارد. این کار مانع از پدیده‌های مخرب محو شدن یا انفجار گرادیان‌ها در لایه‌های متوالی شبکه می‌شود و نقطه آغازین بهینه‌سازی را در یک وضعیت متقارن و پایدار قرار می‌دهد.",
+            "مقداردهی گزاویه تعادل سیگنال را در تمام لایه‌های پرسپترون حفظ می‌کند."
+        ),
+        (
+            "۱۴",
+            "نقش قضیه تقریب عمومی چبنکو (Universal Approximation) در این پایان‌نامه چیست؟",
+            "قضیه چبنکو اثبات ریاضی می‌کند که یک شبکه پرسپترون چندلایه با توابع فعال‌ساز غیرخطی و پیوسته می‌تواند هر تابع پیوسته دلخواهی را با دقت مطلوب تقریب بزند. این قضیه تضمین نظری وجود جوابی برای تقریب میدان سرعت معادله برگرز توسط ساختار شبکه ماست.",
+            "قضیه چبنکو پشتوانه نظری امکان‌پذیری حل معادلات دیفرانسیل توسط شبکه‌های عصبی است."
+        ),
+        (
+            "۱۵",
+            "چرا از دقت ممیز شناور ۶۴ بیتی (Float64) در جکس استفاده کردید؟",
+            "محاسبه مشتقات مرتبه دوم در نزدیکی جبهه شوک به دلیل تفریق اعداد بسیار نزدیک، مستعد خطای حذف رقایم بامعنی (Catastrophic Cancellation) است. فعال‌سازی دقت ۶۴ بیتی در جکس باعث شد خطاهای گردکردن ممیز شناور عملاً به صفر برسد.",
+            "دقت مضاعف ۶۴ بیتی پایداری مشتقات مرتبه بالا در جبهه‌های تیز شوک را تضمین می‌کند."
+        ),
+        (
+            "۱۶",
+            "پدیده سوگیری طیفی (Spectral Bias) در شبکه‌های عصبی چیست؟",
+            "شبکه‌های عصبی استاندارد تمایل دارند ابتدا فرکانس‌های پایین و رفتارهای هموار را یاد بگیرند و یادگیری مؤلفه‌های فرکانس بالا (مثل جبهه‌های شوک تیز) بسیار کندتر انجام می‌شود. این موضوع دلیل اصلی کندی همگرایی در حوالی خط شوک است که در کارهای آینده با توابع ویژگی فوریه قابل حل است.",
+            "سوگیری طیفی تمایل طبیعی شبکه به هموارسازی است که با روش‌های تعبیه فرکانسی اصلاح می‌شود."
+        ),
+        (
+            "۱۷",
+            "تعارض گرادیان‌ها میان تابع هزینه مرزی و فیزیک چیست و چگونه مدیریت شد؟",
+            "در طول آموزش، گرادیان‌های ناشی از باقیمانده فیزیک ممکن است با گرادیان‌های داده‌های مرزی زاویه باز بسازند و یکدیگر را تضعیف کنند. در این پژوهش با شروع از بهینه‌ساز آدام و سپس استفاده از L-BFGS و انتخاب دقیق تعداد نقاط، تعادل لازم بین دو مؤلفه برقرار گردید.",
+            "بهینه‌سازی ترکیبی و نمونه‌برداری متوازن مانع از تسلط یک مؤلفه بر دیگری شد."
+        ),
+        (
+            "۱۸",
+            "اگر داور بگوید «روش‌های سنتی برای این مسئله ۱ بعدی سریع‌ترند، مزیت کار شما چیست؟» چه پاسخی می‌دهید؟",
+            "پاسخ من این است که مسئله برگرز ۱ بعدی یک بستر آزمون استاندارد و اثبات مفهوم (Proof of Concept) است. مزیت بنیادین روش ما در این است که اگر این مسئله به ابعاد بالاتر (مثلاً معادلات ۳ بعدی ناویه--استوکس در یک هندسه پیچیده مثل پره توربین) برود، روش‌های سنتی با بحران تولید شبکه و نفرین ابعاد مواجه می‌شوند؛ در حالی که ساختار PINN پیاده‌شده بدون هیچ تغییر ساختاری و بدون نیاز به شبکه، قابل اجرا خواهد بود.",
+            "معادله برگرز یک محک استاندارد برای اثبات توانایی حل بدون شبکه در مسائل غیرخطی پیچیده است."
+        )
     ]
-    doc.add_table(terms_data, [160, 359], headers=["اصطلاح تخصصی", "تعریف و کاربرد در پایان‌نامه"], bg_header="#1E3A8A", col_aligns=['R', 'R'])
 
-    # ------------------ SECTION 6: GOLD DEFENSE Q&A (12 QUESTIONS) ------------------
-    doc.add_heading1("۶. بانک جامع ۱۲ سؤال طلایی داوران و پاسخ‌های مسلط و دفاع‌محور")
-    doc.add_paragraph("این سؤالات رایج‌ترین و کلیدی‌ترین پرسش‌های هیئت داوران در جلسات دفاع یادگیری عمیق و PINN هستند. پاسخ‌های زیر را به دقت مطالعه کنید:", bold=True, color='#003366')
-    
-    doc.add_qa_box(
-        "سؤال ۱: تفاوت بنیادی مشتق‌گیری خودکار (AD) با مشتق‌گیری عددی (مثل تفاضل محدود) چیست؟",
-        "پاسخ شما: مشتق‌گیری عددی مبتنی بر بسط تیلور با طول گام h است که دچار دو خطای متضاد می‌شود: اگر h بزرگ باشد خطای برش داریم و اگر h خیلی کوچک باشد خطای گردکردن ممیز شناور ناشی از تفریق اعداد بسیار نزدیک رخ می‌دهد. علاوه بر این، نیازمند شبکه‌بندی دامنه است. در مقابل، مشتق‌گیری خودکار نه عددی است و نه نمادین، بلکه با ساخت گراف محاسباتی کد و اعمال نظام‌مند قاعده زنجیره‌ای، مشتقات جزئی را با دقت تحلیلی کامپیوتر و بدون هیچ‌گونه خطای برش در زمان اجرای برنامه ارزیابی می‌کند."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۲: چرا در معماری شبکه عصبی از تابع فعال‌ساز Tanh استفاده کردید و چرا از ReLU استفاده نکردید؟",
-        "پاسخ شما: در معادله غیرخطی برگرز به مشتق مرتبه دوم مکانی (u_xx) برای مدل‌سازی جمله لزجت و پخش سینماتیکی نیاز داریم. تابع فعال‌ساز ReLU یک تابع پیوسته اما تکه‌ای خطی است که مشتق اول آن پله‌ای و مشتق دوم آن در همه نقاط صفر است؛ بنابراین با ReLU نمی‌توان جملات دیفرانسیلی مرتبه دو را تشکیل داد. در مقابل، تابع تانژانت هیپربولیک (Tanh) یک تابع هموار و بی‌نهایت‌بار مشتق‌پذیر (C-infinity) است که مشتقات اول و دوم تحلیلی غیرصفر تولید می‌نماید."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۳: چرا فرآیند آموزش را به صورت دو مرحله‌ای (ابتدا Adam و سپس L-BFGS) طراحی کردید؟",
-        "پاسخ شما: توابع هزینه در شبکه‌های آگاه از فیزیک غیرخطی و پیچیده بوده و دارای کمینه‌های محلی متعددی هستند. بهینه‌ساز آدام با بهره‌گیری از گشتاور اول و دوم گرادیان‌ها در مراحل اولیه در فرار از کمینه‌های محلی و کاهش سریع خطا بسیار توانمند است، اما در نزدیکی نقطه بهینه همگرایی کندی دارد. در مقابل، بهینه‌ساز شبه‌نیوتنی L-BFGS با تقریب ماتریس هشین، در نزدیکی کمینه سراسری سرعت همگرایی فوق‌خطی و مرتبه دو دارد. ترکیب این دو روش بالاترین پایداری و بیشترین دقت نهایی را تضمین می‌کند."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۴: نقاط هم‌مکانی (Collocation Points) چیستند، چند تا بودند و چرا چگالی آن‌ها در حوالی x=0 بیشتر بود؟",
-        "پاسخ شما: نقاط هم‌مکانی نقاطی درون دامنه پیوسته فضا-زمان هستند که هیچ داده اندازه‌گیری تجربی یا برچسبی برای آن‌ها نداریم، اما باقیمانده معادله فیزیک در آن‌ها ارزیابی و صفر می‌شود. در این پژوهش ۱۰۰۰۰ نقطه هم‌مکانی استفاده شد. از آن‌جا که در معادله برگرز پدیده موج شوک و گرادیان‌های بسیار شدید سرعت در حوالی خط مرکزی x=0 (برای زمان‌های t>0.3) رخ می‌دهد، نمونه‌برداری متمرکز در این ناحیه باعث شد که شبکه عصبی رزولوشن بالاتری در یادگیری جبهه تیز شوک داشته باشد."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۵: چرا کتابخانه جکس (JAX) را برای پیاده‌سازی انتخاب کردید و چه مزیتی نسبت به PyTorch یا TensorFlow دارد؟",
-        "پاسخ شما: جکس مبتنی بر پارادایم برنامه‌نویسی تابعی محض طراحی شده و با ارائه تبدیل‌های تابعی ترکیب‌پذیر نظیر grad برای مشتق‌گیری مراتب بالا، vmap برای بردارسازی خودکار بدون حلقه‌های پایتون و jit برای کامپایل بهینه‌ساز XLA، سرعت محاسباتی فوق‌العاده بالا و ساختار کدی بسیار شفاف و مستقیمی را برای فرمول‌بندی معادلات دیفرانسیل فراهم می‌سازد."
+    for q_data in qa_list:
+        q_num, q_text, ans_text, core_ins = q_data
+        doc.draw_qa_item(q_num, q_text, ans_text, core_ins)
+
+    # ---------------------------------------------------------
+    # SECTION 7: DEFENSE PRESENTATION SCRIPT (Minute-by-Minute)
+    # Start on a fresh clean page for perfect layout
+    # ---------------------------------------------------------
+    doc.new_page()
+
+    doc.draw_section_header("۷", "سناریوی گام‌به‌گام و زمان‌بندی ارائه دفاعیه (۲۰ دقیقه سخنرانی بی‌نقص)", C_NAVY_DARK)
+
+    doc.draw_callout_box(
+        title="تقسیم‌بندی استاندارد زمان ۲۰ دقیقه‌ای جلسه دفاع:",
+        text="یک دفاعیه استاندارد و آکادمیک باید دقیقاً در ۲۰ دقیقه به پایان برسد تا داوران خسته نشوند و زمان کافی برای پرسش و پاسخ باقی بماند. اسلایدهای پاورپوینت دقیقاً با این سناریو همگام شده‌اند.",
+        bg_col=C_LIGHT_BG,
+        border_col=C_CARD_BORDER,
+        title_col=C_NAVY_DARK
     )
 
-    doc.add_qa_box(
-        "سؤال ۶: چرا مسئله معکوس (Inverse Problem) را بررسی نکردید و روی مسئله مستقیم متمرکز شدید؟",
-        "پاسخ شما: به راهنمایی استاد محترم راهنما (جناب آقای دکتر آذرنوید)، برای حفظ تمرکز عمیق علمی پژوهش بر روی چالش‌های محاسباتی بازسازی جبهه‌های نوک‌تیز موج شوک و بررسی دقیق توزیع مکانی-زمانی خطا و مقایسه جامع با نتایج مقاله مرجع معتبر رئیسی و همکاران (۲۰۱۹)، دامنه این پایان‌نامه به‌طور تخصصی و دقیق بر حل مسئله مستقیم معطوف گردید."
-    )
-
-    doc.add_qa_box(
-        "سؤال ۷: نقش ضریب لزجت (nu = 0.01/pi) در رفتار معادله برگرز چیست و اگر این مقدار کمتر شود چه اتفاقی می‌افتد؟",
-        "پاسخ شما: ضریب لزجت سینماتیکی (nu) بیانگر شدت پخش و اصطکاک در جریان است که تمایل به هموارسازی امواج دارد. در مقابل، جمله غیرخطی u*u_x تمایل به جلو کشیدن موج و ایجاد ناپیوستگی شوک دارد. هر چه ضریب لزجت کوچکتر باشد، اثر اصطکاک کمتر شده و جبهه شوک نوک‌تیزتر، شیب‌دارتر و باریک‌تر می‌شود و چالش تقریب شبکه عصبی به شدت افزایش می‌یابد."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۸: آیا شبکه عصبی PINN دچار بیش‌برازش (Overfitting) نمی‌شود؟ چرا از Dropout استفاده نکردید؟",
-        "پاسخ شما: خیر؛ در شبکه‌های آگاه از فیزیک به دلیل وجود جمله خطای باقیمانده فیزیک (MSE_f)، کل فضای فرضیات شبکه به توابعی محدود می‌شود که قوانین بقا و معادله دیفرانسیل حاکم را ارضا کنند. این قید فیزیکی در حقیقت نقش یک منظم‌ساز (Regularizer) ساختاری بسیار قدرتمند را ایفا می‌کند که مانع بیش‌برازش می‌شود؛ بنابراین نیازی به استفاده از تکنیک‌های تجربی مثل لایه‌های دراپ‌اوت (Dropout) وجود ندارد."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۹: ساختار دو سطحی مشتق‌گیری خودکار که در فصل ۳ تشریح شده است دقیقاً یعنی چه؟",
-        "پاسخ شما: مشتق‌گیری خودکار در PINN در دو سطح مجزا عمل می‌کند: ۱. سطح اول (مشتق‌گیری داخلی نسبت به متغیرهای فیزیکی فضا-زمان): که مشتقات u_t، u_x و u_xx را نسبت به ورودی‌های مختصاتی (t,x) برای تشکیل معادله باقیمانده f حساب می‌کند. ۲. سطح دوم (مشتق‌گیری خارجی نسبت به پارامترهای شبکه): که پس از محاسبه تابع هزینه کل، گرادیان آن را نسبت به وزن‌ها و بایاس‌های شبکه (grad_theta Loss) برای آموزش مدل محاسبه می‌نماید."
-    )
-    
-    doc.add_qa_box(
-        "سؤال ۱۰: خطای ۲.۱۵ درصدی به دست آمده در مقایسه با مقاله مرجع رئیسی (۲۰۱۹) چگونه ارزیابی می‌شود؟",
-        "پاسخ شما: در مقاله بنیادین رئیسی و همکاران (۲۰۱۹) خطای نسبی L2 در حدود ۶.۷ در ۱۰ به توان منفی ۴ گزارش شده است که حاصل بهینه‌سازی بسیار طولانی تا ده‌ها هزار تکرار L-BFGS و ۵۰ هزار نقطه هم‌مکانی بر روی کارت‌های گرافیکی تخصصی بوده است. در پژوهش حاضر با ۶۰۰۰ گام Adam و بهینه‌سازی متعادل L-BFGS با ۱۰۰۰۰ نقطه بر بستر پردازنده مرکزی استاندارد، به خطای ۲.۱۵ درصدی رسیدیم که از نظر کیفی موقعیت و شیب تیز شوک را در تمام مقاطع زمانی با وفاداری بسیار بالا بازتولید کرده است."
-    )
-
-    doc.add_qa_box(
-        "سؤال ۱۱: تفاوت مدل زمان‌پیوسته و زمان‌گسسته چیست و چرا مدل زمان‌پیوسته را پیاده‌سازی کردید؟",
-        "پاسخ شما: در مدل زمان‌پیوسته، فضا و زمان به صورت هم‌زمان به شبکه داده می‌شوند و شبکه خروجی پیوسته u(t,x) را در کل دامنه برمی‌گرداند. در مدل زمان‌گسسته، با استفاده از روش‌های رانگه-کوتا ضمنی (IRK) گام‌زنی زمانی انجام می‌شود و شبکه جواب را در مراحل میانی تقریب می‌زند. مدل زمان‌پیوسته به دلیل ساختار یکپارچه، سادگی محاسباتی و توانایی ارزیابی در هر لحظه دلخواه زمانی، انتخاب اصلی این پایان‌نامه بوده است."
-    )
-
-    doc.add_qa_box(
-        "سؤال ۱۲: آیا این چارچوب برای معادلات دوبعدی، سه‌بعدی و هندسه‌های نامنظم هم کاربرد دارد؟",
-        "پاسخ شما: بله؛ بزرگترین مزیت PINN بدون شبکه (Mesh-Free) بودن آن است. در ابعاد بالاتر، کافی است بردار ورودی شبکه از (t,x) به (t,x,y,z) گسترش یابد و نقاط هم‌مکانی درون هندسه نامنظم نمونه‌برداری شوند، بدون اینکه نیازی به تولید توری یا المان‌بندی‌های پیچیده مهندسی باشد."
-    )
-
-    # ------------------ SECTION 7: DEFENSE PRESENTATION SCRIPT & SLIDES ------------------
-    doc.add_heading1("۷. سناریوی گام‌به‌گام و زمان‌بندی ارائه دفاعیه (۲۰ دقیقه سخنرانی بی‌نقص)")
-    doc.add_paragraph("اگر می‌خواهید یک ارائه روان، مسلط و بدون استرس داشته باشید، اسلایدهای خود را طبق زمان‌بندی استاندارد زیر تقسیم‌بندی کنید:", bold=True, color='#003366')
-    
-    slide_data = [
-        ["اسلاید ۱ و ۲\n(۲ دقیقه)", "عنوان، خوش‌آمدگویی و بیان مسئله", "معرفی خود و استاد راهنما؛ توضیح اینکه روش‌های سنتی وابسته به مش‌بندی هستند و هوش مصنوعی معمولی نیازمند داده بسیار زیاد است و در غیاب داده قوانین فیزیک را نقض می‌کند."],
-        ["اسلاید ۳ و ۴\n(۳ دقیقه)", "معادله برگرز و چالش شوک", "معرفی فرمول برگرز و توضیح رقابت همرفت و پخش؛ توضیح اینکه تشکیل جبهه تیز شوک به عنوان یک مسئله معیار در مکانیک سیالات و ترافیک مطرح است."],
-        ["اسلاید ۵ و ۶\n(۳ دقیقه)", "ایده محوری PINN و مشتق‌گیری خودکار", "نمایش دیاگرام بلوکی فصل ۳؛ توضیح اینکه مشتق‌گیری خودکار با قاعده زنجیره‌ای در JAX مشتقات فیزیکی u_t, u_x, u_xx را بدون نیاز به شبکه محاسباتی حساب می‌کند."],
-        ["اسلاید ۷ و ۸\n(۳ دقیقه)", "تابع هزینه دوقلو و ساختار الگوریتمی JAX", "تشریح تابع خطای Loss = MSE_u + MSE_f با ۲۰۰ نقطه مرزی و ۱۰۰۰۰ نقطه هم‌مکانی؛ توضیح خط لوله کامپایل JIT و بردارسازی VMAP در جکس."],
-        ["اسلاید ۹ و ۱۰\n(۲ دقیقه)", "استراتژی آموزش ترکیبی Adam و L-BFGS", "توضیح روند دو مرحله‌ای: ۶۰۰۰ گام Adam برای فرار از کمینه‌های محلی و سپس ادامه با L-BFGS برای همگرایی سریع به دقت ۱۰ به توان منفی پنج."],
-        ["اسلاید ۱۱ تا ۱۳\n(۵ دقیقه)", "نتایج تجربی، نمودارها و مقایسه با مرجع", "نمایش نمودار مقاطع زمانی شکل ۴-۳ و بازسازی دقیق شیب شوک، نمایش نقشه خطای شکل ۴-۴، گزارش خطای نسبی ۲.۱۵ درصد و مقایسه تطبیقی با مقاله مرجع رئیسی (۲۰۱۹)."],
-        ["اسلاید ۱۴ و ۱۵\n(۲ دقیقه)", "نتیجه‌گیری و پیشنهادهای آینده", "جمع‌بندی دستاوردها در حل بدون شبکه معادلات غیرخطی؛ ارائه پیشنهادها برای کارهای آینده (توابع فعال‌ساز تطبیقی، روش‌های دامنه فرکانسی، توسعه به ابعاد بالاتر)."]
+    p_headers = ["بخش و اسلایدها", "زمان‌بندی", "موضوع محوری", "نکات کلیدی صحبت دانشجو"]
+    p_col_w = [105, 60, 140, 215]
+    p_rows = [
+        ["اسلاید ۱ و ۲", "۲ دقیقه", "عنوان و ساختار ارائه", "خوش‌آمدگویی، معرفی خود و استاد راهنما، بیان فهرست مطالب"],
+        ["اسلاید ۳ تا ۵", "۳ دقیقه", "مقدمه و کاستی‌های موجود", "اهمیت معادلات غیرخطی، چالش‌های FDM و FEM و محدودیت هوش مصنوعی سنتی"],
+        ["اسلاید ۶ تا ۸", "۳ دقیقه", "ایده PINN و معادله برگرز", "تلفیق فیزیک با شبکه، رقابت همرفت و لزجت، تابع هزینه دوگانه"],
+        ["اسلاید ۹ و ۱۰", "۲ دقیقه", "مشتق‌گیری خودکار و مدل‌ها", "مزیت AutoDiff نسبت به تفاضل محدود، مقایسه زمان‌پیوسته با زمان‌گسسته"],
+        ["اسلاید ۱۱ تا ۱۴", "۴ دقیقه", "پیاده‌سازی جکس و بهینه‌سازی", "تبدیلات grad و vmap و jit، معماری ۴ لایه، تابع Tanh و آموزش دو مرحله‌ای"],
+        ["اسلاید ۱۵ تا ۱۸", "۴ دقیقه", "نتایج تجربی و مقایسه", "بازسازی موج شوک (شکل ۳-۴)، نقشه خطا، مقایسه با مقاله مرجع رئیسی"],
+        ["اسلاید ۱۹ تا ۲۱", "۲ دقیقه", "جمع‌بندی و سپاسگزاری", "دستاوردهای اصلی، ۴ افق آینده، تشکر از استاد راهنما و اعلام آمادگی"],
     ]
-    
-    doc.add_table(slide_data, [95, 150, 274], headers=["بخش و زمان", "موضوع اسلاید", "نکات کلیدی صحبت دانشجو در جلسه"], bg_header="#0F766E", col_aligns=['C', 'R', 'R'])
-    
-    doc.add_heading2("نکات کلیدی برای درخشش و تسلط در روز دفاع:")
-    doc.add_bullet("آرامش در صدا و زبان بدن: شمرده صحبت کنید و بین جملات مکث‌های کوتاه داشته باشید.", "لحن صحبت:")
-    doc.add_bullet("ارجاع به مفاهیم فیزیکی: هر جا سؤالی پرسیده شد، به قانون بقا و ارضای معادله دیفرانسیل اشاره کنید.", "کلیدواژه طلایی:")
-    doc.add_bullet("صداقت علمی: اگر داوری نکته‌ای مطرح کرد، ابتدا تشکر کنید («نکته بسیار ارزشمندی است و در کارهای آینده مدنظر قرار خواهد گرفت»).", "پاسخ به انتقادات:")
+    doc.draw_table("", p_headers, p_rows, p_col_w, ["center", "center", "right", "right"])
 
-    doc.add_callout(
-        "«شبکه عصبی آگاه از فیزیک (PINN) یک حل‌گر عددی بدون شبکه محاسباتی است که با استفاده از مشتق‌گیری خودکار در کتابخانه جکس، قوانین بنیادین فیزیک را در کل دامنه فضا-زمان ارضا کرده و با کمترین داده‌های مرزی، رفتار پیچیده امواج شوک را با دقت بالا بازسازی می‌نماید.» — با آرزوی موفقیت، درخشش و نمره ۲۰ برای شما در جلسه دفاع!",
-        title="جمله طلایی پایانی شما در جلسه دفاع",
-        bg_color="#ECFDF5", border_color="#10B981", title_color="#065F46"
+    # ---------------------------------------------------------
+    # SECTION 8: BODY LANGUAGE & DEFENSE ETIQUETTE
+    # ---------------------------------------------------------
+    doc.draw_section_header("۸", "نکات طلایی زبان بدن، مدیریت جلسه و کلام پایانی برای کسب نمره ۲۰", C_TEAL_DARK)
+
+    doc.draw_bullet_item(
+        "لحن و شیوه صحبت:",
+        "شمرده، آرام و با تن صدای رسا و با اعتمادبه‌نفس صحبت کنید. از تند صحبت کردن پرهیز نمایید. بین جملات کلیدی مکث‌های کوتاه ۲ ثانیه‌ای داشته باشید تا مفاهیم در ذهن داور بنشیند."
+    )
+
+    doc.draw_bullet_item(
+        "نحوه برخورد با انتقادات و سوالات داور:",
+        "هرگز با داور وارد بحث فرسایشی یا لحن تدافعی نشوید. ابتدا با کمال احترام بگویید: «بسیار سپاسگزارم از نکته دقیق و ارزشمندی که استاد محترم فرمودند». سپس با استناد به مبانی ریاضی و شواهد تجربی پاسخ دهید."
+    )
+
+    doc.draw_bullet_item(
+        "کلیدواژه طلایی که باید در پاسخ‌ها بدرخشد:",
+        "«ارضای مستقیم قوانین فیزیک بدون نیاز به تولید شبکه محاسباتی (Mesh-Free) و با بهره‌گیری از مشتق‌گیری خودکار در کتابخانه جکس»."
+    )
+
+    doc.draw_callout_box(
+        title="جمله طلایی و ماندگار شما برای پایان جلسه دفاع:",
+        text="«شبکه عصبی آگاه از فیزیک (PINN) یک حل‌گر عددی مدرن و بدون شبکه محاسباتی است که با بهره‌گیری از مشتق‌گیری خودکار، قوانین بنیادین فیزیک را در سراسر فضا-زمان ارضا کرده و با کمترین داده‌های مرزی، رفتار پیچیده امواج شوک را با دقت بالا بازسازی می‌نماید. با تشکر فراوان از توجه و شکیبایی هیئت محترم داوران.»",
+        bg_col=C_A_BG,
+        border_col=C_A_BORDER,
+        title_col=C_TEAL_DARK
     )
 
     doc.save()
 
-if __name__ == '__main__':
-    generate()
+if __name__ == "__main__":
+    build_guide()
